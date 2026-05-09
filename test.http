@@ -1,0 +1,8 @@
+POST http://localhost:5000/transactions/send
+Content-Type: application/json
+
+{
+  "senderAccountNumber": "ACC001",
+  "toAccountNumber": "ACC002",
+  "amount": 100
+}
