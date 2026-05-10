@@ -34,7 +34,11 @@ if (useSmtp) {
 }
 
 // ── Transport instances ───────────────────────────────────────────────────────
-const resend = useSmtp ? null : new Resend(process.env.RESEND_API_KEY);
+// Guard: Resend constructor throws if the key is undefined — defer instantiation
+// so a missing key only disables email, it never crashes the server.
+const resend = (useSmtp || !process.env.RESEND_API_KEY)
+  ? null
+  : new Resend(process.env.RESEND_API_KEY);
 
 const smtp = useSmtp
   ? nodemailer.createTransport({
@@ -64,6 +68,11 @@ async function send({ to, subject, html, text }) {
     console.log(`[Email] SMTP attempt: "${subject}" → ${to}`);
     const info = await smtp.sendMail({ from: FROM, to, subject, html, text });
     console.log(`[Email] SMTP delivered: messageId=${info.messageId} response="${info.response}"`);
+    return;
+  }
+
+  if (!resend) {
+    console.warn(`[Email] Resend skipped — RESEND_API_KEY is not set. Subject: "${subject}" → ${to}`);
     return;
   }
 
