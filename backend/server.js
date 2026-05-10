@@ -64,6 +64,24 @@ const runMigration = async (filename) => {
 };
 
 const runMigrations = async () => {
+  // Run base schema first — creates all core tables on a fresh database.
+  // All statements use CREATE TABLE IF NOT EXISTS so this is safe to run on
+  // every startup; existing tables and data are never touched.
+  const schemaPath = path.join(__dirname, 'schema.sql');
+  if (fs.existsSync(schemaPath)) {
+    const client = await pool.connect();
+    try {
+      await client.query(fs.readFileSync(schemaPath, 'utf8'));
+      console.log('[Migrate] schema.sql — OK');
+    } catch (err) {
+      console.error(`[Migrate] schema.sql failed:\n  ${err.message}`);
+    } finally {
+      client.release();
+    }
+  } else {
+    console.warn('[Migrate] schema.sql not found — skipping base schema');
+  }
+
   await runMigration('001_complete_schema_fix.sql');
   await runMigration('002_fix_email_case.sql');
   await runMigration('003_fix_cvv_hash.sql');
