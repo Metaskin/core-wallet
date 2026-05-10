@@ -23,7 +23,7 @@ app.set('trust proxy', 1);
 app.use(helmet());
 
 if (!process.env.CLIENT_ORIGIN && process.env.NODE_ENV === 'production') {
-  console.warn('[CORS] WARNING: CLIENT_ORIGIN is not set — all origins are allowed. Set it to your Amplify URL.');
+  console.warn('[CORS] WARNING: CLIENT_ORIGIN is not set — all origins are allowed. Set it to your Vercel URL.');
 }
 app.use(cors({
   origin:  process.env.CLIENT_ORIGIN || '*',
@@ -66,6 +66,8 @@ const runMigration = async (filename) => {
 const runMigrations = async () => {
   await runMigration('001_complete_schema_fix.sql');
   await runMigration('002_fix_email_case.sql');
+  await runMigration('003_fix_cvv_hash.sql');
+  await runMigration('004_notifications.sql');
 
   // Phase 3: column patches outside migration transactions
   const client = await pool.connect();
@@ -94,6 +96,16 @@ const runMigrations = async () => {
 const PORT = parseInt(process.env.PORT || '5001');
 
 const start = async () => {
+  if (process.env.NODE_ENV === 'production') {
+    const { JWT_SECRET } = require('./config/constants');
+    if (JWT_SECRET === 'corewallet_dev_secret_change_in_prod') {
+      console.warn('[Security] WARNING: JWT_SECRET is using the dev default. Set a strong random value on Render!');
+    }
+    if (!process.env.CARD_ENCRYPTION_KEY) {
+      console.warn('[Security] WARNING: CARD_ENCRYPTION_KEY is not set. Card creation and decryption will fail in production.');
+    }
+  }
+
   await testConnection();
   await runMigrations();
 

@@ -12,7 +12,7 @@ function clearToken() {
 }
 
 // In development, VITE_API_URL is unset and Vite's proxy forwards /api → localhost:5001.
-// In production (Amplify), set VITE_API_URL=https://your-backend.com/api in Amplify env vars.
+// In production (Vercel), set VITE_API_URL=https://<your-render-backend>.onrender.com/api in Vercel env vars.
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 15000,

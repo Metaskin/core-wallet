@@ -27,15 +27,15 @@ const errorHandler = (err, req, res, next) => {
     message = 'Token expired';
   }
 
-  // Don't leak internals in production
+  // Don't leak internals in production client responses
   if (process.env.NODE_ENV === 'production' && !err.isOperational) {
     statusCode = 500;
     message = 'Something went wrong';
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    console.error(`[${req.method}] ${req.path} — ${err.stack || err.message}`);
-  }
+  // Always log to server console — in production this surfaces in Render logs
+  // and is the only way to diagnose non-operational 500 errors.
+  console.error(`[${req.method}] ${req.path} ${statusCode} — ${err.stack || err.message}`);
 
   res.status(statusCode).json({
     status:  statusCode < 500 ? 'fail' : 'error',
