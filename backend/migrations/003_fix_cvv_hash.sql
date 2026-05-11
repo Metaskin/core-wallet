@@ -33,9 +33,3 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 COMMIT;
-
--- Verify:
-SELECT column_name, data_type, is_nullable, column_default
-FROM information_schema.columns
-WHERE table_name = 'cards'
-ORDER BY ordinal_position;
