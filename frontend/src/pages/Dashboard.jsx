@@ -93,7 +93,7 @@ export default function Dashboard() {
   const displayTotal = ledger != null ? ledger + pendingCreditSum : null;
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl w-full">
       {/* Greeting */}
       <div className="mb-8 animate-fade-up">
         <h1 className="text-white font-bold text-2xl font-display">
@@ -146,22 +146,22 @@ export default function Dashboard() {
           </div>
 
           {/* Quick actions */}
-          <div className="flex gap-3 animate-fade-up" style={{ animationDelay: '0.1s' }}>
+          <div className="flex flex-col sm:flex-row gap-3 animate-fade-up" style={{ animationDelay: '0.1s' }}>
             <button
               onClick={() => account?.status === 'active' ? setShowSend(true) : toast.error('Account is frozen')}
-              className="btn-primary flex-1 h-12"
+              className="btn-primary w-full sm:flex-1 h-12"
             >
               <SendIcon /> Send Money
             </button>
             <button
               onClick={() => account?.status === 'active' ? setShowReceive(true) : toast.error('Account is frozen')}
-              className="btn-ghost flex-1 h-12 border border-white/10"
+              className="btn-ghost w-full sm:flex-1 h-12 border border-white/10"
             >
               <ReceiveIcon /> Receive
             </button>
             <button
               onClick={() => navigate('/transactions')}
-              className="btn-ghost flex-1 h-12 border border-white/10"
+              className="btn-ghost w-full sm:flex-1 h-12 border border-white/10"
             >
               <HistoryIcon /> History
             </button>
@@ -214,7 +214,7 @@ export default function Dashboard() {
             </div>
 
             {cardsLoad ? (
-              <div className="w-full max-w-sm h-44 rounded-2xl shimmer" />
+              <div className="w-full h-44 rounded-2xl shimmer" />
             ) : !activeCard ? (
               <NoCardPlaceholder onNavigate={() => navigate('/cards')} />
             ) : (activeCard.cardType === 'credit' || activeCard.type === 'credit') ? (
@@ -294,7 +294,7 @@ function NoCardPlaceholder({ onNavigate }) {
   return (
     <button
       onClick={onNavigate}
-      className="w-full max-w-sm h-44 rounded-2xl border-2 border-dashed border-white/10
+      className="w-full h-44 rounded-2xl border-2 border-dashed border-white/10
                  flex flex-col items-center justify-center gap-2 text-white/20
                  hover:border-accent/30 hover:text-accent/50 transition-all"
     >
