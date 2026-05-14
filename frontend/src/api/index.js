@@ -60,6 +60,11 @@ export const notificationAPI = {
   delete:       (id)                     => client.delete(`/notifications/${id}`),
 };
 
+// ─── Statements ───────────────────────────────────────────────────────────────
+export const statementAPI = {
+  download: () => client.get('/statements/me', { responseType: 'blob' }),
+};
+
 // ─── Admin ────────────────────────────────────────────────────────────────────
 export const adminAPI = {
   getUsers:     ()        => client.get('/admin/users'),

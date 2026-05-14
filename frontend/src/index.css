@@ -6,16 +6,105 @@
   * { box-sizing: border-box; }
   html { -webkit-font-smoothing: antialiased; }
   body {
-    @apply bg-surface text-white font-sans;
-    background-image: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99,102,241,0.12) 0%, transparent 60%);
+    @apply bg-gray-50 text-gray-900 font-sans;
     min-height: 100vh;
   }
   ::-webkit-scrollbar        { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track  { background: transparent; }
-  ::-webkit-scrollbar-thumb  { @apply bg-white/10 rounded-full; }
+  ::-webkit-scrollbar-thumb  { @apply bg-gray-300 rounded-full; }
 }
 
 @layer components {
+
+  /* ── Banking light-theme card ──────────────────────────────────────────── */
+  .bank-card {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border-radius: 12px;
+  }
+  .bank-card-hover {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border-radius: 12px;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .bank-card-hover:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    border-color: #D1D5DB;
+  }
+
+  /* ── Section label ─────────────────────────────────────────────────────── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9CA3AF;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── Buttons ───────────────────────────────────────────────────────────── */
+  .btn-primary {
+    @apply flex items-center gap-2 justify-center px-5 py-2.5 rounded-lg
+           bg-navy text-white font-semibold text-sm
+           hover:bg-[#002070] active:scale-[0.98]
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply flex items-center gap-2 justify-center px-5 py-2.5 rounded-lg
+           text-gray-600 font-medium text-sm border border-gray-200
+           hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-outline {
+    @apply flex items-center gap-2 justify-center px-5 py-2.5 rounded-lg
+           text-navy font-medium text-sm
+           border border-navy/25
+           hover:bg-navy/5 hover:border-navy/40
+           transition-all duration-150;
+  }
+  .btn-danger {
+    @apply flex items-center gap-2 justify-center px-5 py-2.5 rounded-lg
+           text-bank-red font-medium text-sm
+           border border-bank-red/25
+           hover:bg-bank-red/5
+           transition-all duration-150;
+  }
+
+  /* ── Inputs ────────────────────────────────────────────────────────────── */
+  .input-base {
+    @apply w-full bg-white border border-gray-200 rounded-lg
+           px-4 py-3 text-gray-900 placeholder-gray-400
+           focus:outline-none focus:ring-2 focus:ring-[#0072CE]/20 focus:border-[#0072CE]
+           transition-all duration-150 text-sm;
+  }
+
+  /* Input overrides inside dark glass containers (Login page) */
+  .glass-bright .input-base {
+    @apply bg-white/5 border-white/10 text-white placeholder-white/20
+           focus:border-accent/60 focus:ring-accent/10;
+  }
+
+  /* ── Badges ────────────────────────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium;
+  }
+
+  /* ── Amount display ────────────────────────────────────────────────────── */
+  .amount-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Shimmer — light theme ─────────────────────────────────────────────── */
+  .shimmer {
+    background: linear-gradient(90deg, #f3f4f6 0%, #e5e7eb 50%, #f3f4f6 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* ── Glass — dark theme (Login / Landing) ──────────────────────────────── */
   .glass {
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.08);
@@ -26,52 +115,14 @@
     border: 1px solid rgba(255,255,255,0.12);
     backdrop-filter: blur(16px);
   }
-  .btn-primary {
-    @apply flex items-center gap-2 justify-center px-5 py-2.5 rounded-xl
-           bg-accent text-white font-semibold text-sm
-           hover:bg-accent-2 active:scale-95
-           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-  .btn-ghost {
-    @apply flex items-center gap-2 justify-center px-5 py-2.5 rounded-xl
-           text-white/60 font-medium text-sm
-           hover:bg-white/5 hover:text-white
-           transition-all duration-150;
-  }
-  .input-base {
-    @apply w-full bg-white/5 border border-white/10 rounded-xl
-           px-4 py-3 text-white placeholder-white/30
-           focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50
-           transition-all duration-150 text-sm;
-  }
-  .badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium;
-  }
-  .amount-display {
-    font-family: 'JetBrains Mono', monospace;
-    font-variant-numeric: tabular-nums;
-  }
-  .shimmer {
-    background: linear-gradient(90deg,
-      rgba(255,255,255,0.04) 0%,
-      rgba(255,255,255,0.08) 50%,
-      rgba(255,255,255,0.04) 100%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-  .card-gradient-debit {
-    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #1e3a5f 100%);
-  }
-  .card-gradient-credit {
-    background: linear-gradient(135deg, #1a0533 0%, #4c1d95 45%, #1e1b4b 100%);
-  }
-  .card-gradient-blue {
-    background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 50%, #1d4ed8 100%);
-  }
-  .card-gradient-black {
-    background: linear-gradient(135deg, #0a0a0a 0%, #171717 55%, #262626 100%);
-  }
-  .card-gradient-gold {
-    background: linear-gradient(135deg, #3b1507 0%, #78350f 35%, #a16207 68%, #ca8a04 100%);
-  }
+
+  /* ── Payment card gradients (intentionally dark) ───────────────────────── */
+  .card-gradient-debit   { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #1e3a5f 100%); }
+  .card-gradient-credit  { background: linear-gradient(135deg, #1a0533 0%, #4c1d95 45%, #1e1b4b 100%); }
+  .card-gradient-blue    { background: linear-gradient(135deg, #003087 0%, #0072CE 100%); }
+  .card-gradient-black   { background: linear-gradient(135deg, #0a0a0a 0%, #171717 55%, #262626 100%); }
+  .card-gradient-gold    { background: linear-gradient(135deg, #3b1507 0%, #78350f 35%, #a16207 68%, #ca8a04 100%); }
+
+  /* ── Utility ───────────────────────────────────────────────────────────── */
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 }

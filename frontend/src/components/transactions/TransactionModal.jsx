@@ -4,17 +4,12 @@ import { getDisplayName } from '../../utils/merchantDisplay';
 import { transactionAPI } from '../../api';
 import toast from 'react-hot-toast';
 
-// ─── Animation helpers ────────────────────────────────────────────────────────
-// We mount/unmount via `open`, but we delay the actual DOM removal by 250ms
-// so the exit CSS transition can finish.
-
 export default function TransactionModal({ transaction: tx, accountNumber, open, onClose, onDeleted }) {
-  const [visible,  setVisible]  = useState(false);   // drives CSS transition
-  const [mounted,  setMounted]  = useState(false);   // drives DOM presence
-  const [deleting, setDeleting] = useState(false);   // spinner while API call
-  const [confirm,  setConfirm]  = useState(false);   // "are you sure?" state
+  const [visible,  setVisible]  = useState(false);
+  const [mounted,  setMounted]  = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirm,  setConfirm]  = useState(false);
 
-  // Open → mount immediately, then animate in next tick
   useEffect(() => {
     if (open) {
       setMounted(true);
@@ -30,18 +25,16 @@ export default function TransactionModal({ transaction: tx, accountNumber, open,
   if (!mounted || !tx) return null;
 
   const isIncoming   = resolveDirection(tx, accountNumber) === 'in';
-  const amountColor  = isIncoming ? 'text-emerald-400' : 'text-white';
   const amountPrefix = isIncoming ? '+' : '−';
+  const failed       = tx.status === 'failed';
 
-  // Resolve external name once — random selection must not be called multiple times
-  const extRef      = tx.externalReference || tx.external_reference;
+  const extRef       = tx.externalReference || tx.external_reference;
   const externalName = extRef ? getDisplayName(tx) : null;
 
-  const displayFrom = externalName && tx.type === 'credit' ? externalName : (tx.fromName || '—');
-  const displayTo   = externalName && tx.type === 'debit'  ? externalName : (tx.toName  || '—');
-  const headerTitle = isIncoming ? `From ${displayFrom}` : `To ${displayTo}`;
+  const displayFrom  = externalName && tx.type === 'credit' ? externalName : (tx.fromName || '—');
+  const displayTo    = externalName && tx.type === 'debit'  ? externalName : (tx.toName  || '—');
+  const headerTitle  = isIncoming ? `From ${displayFrom}` : `To ${displayTo}`;
 
-  // ─── Download receipt as text ───────────────────────────────────────────────
   const handleDownload = () => {
     const lines = [
       'COREWALLET — TRANSACTION RECEIPT',
@@ -76,7 +69,6 @@ export default function TransactionModal({ transaction: tx, accountNumber, open,
     toast.success('Receipt downloaded');
   };
 
-  // ─── Soft delete ─────────────────────────────────────────────────────────────
   const handleDelete = async () => {
     setDeleting(true);
     try {
@@ -92,121 +84,110 @@ export default function TransactionModal({ transaction: tx, accountNumber, open,
     }
   };
 
+  const amountColor = failed ? 'text-bank-red' : isIncoming ? 'text-bank-green' : 'text-gray-900';
+
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-250
-                  ${visible ? 'bg-black/60 backdrop-blur-sm' : 'bg-black/0 backdrop-blur-none pointer-events-none'}`}
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all duration-250
+                  ${visible ? 'bg-black/40 backdrop-blur-sm' : 'bg-black/0 backdrop-blur-none pointer-events-none'}`}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div
-        className={`w-full max-w-md transition-all duration-250
-                    ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+        className={`w-full sm:max-w-md transition-all duration-250
+                    ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6 sm:translate-y-4'}`}
       >
-        {/* Card */}
-        <div className="glass-bright rounded-2xl overflow-hidden">
+        <div className="bg-white sm:rounded-2xl overflow-hidden shadow-card-lg rounded-t-2xl">
 
-          {/* ── Header ── */}
-          <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/[0.06]">
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0
-                ${isIncoming ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
-                {isIncoming ? <ArrowDownIcon /> : <ArrowUpIcon />}
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                failed ? 'bg-red-50' : isIncoming ? 'bg-emerald-50' : 'bg-blue-50'
+              }`}>
+                {failed ? <FailIcon /> : isIncoming ? <ArrowDownIcon /> : <ArrowUpIcon />}
               </div>
               <div>
-                <p className="text-white font-semibold text-sm">{headerTitle}</p>
-                <p className="text-white/30 text-xs font-mono">{tx.reference}</p>
+                <p className="text-gray-800 font-semibold text-sm">{headerTitle}</p>
+                <p className="text-gray-400 text-xs font-mono">{tx.reference}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-white/20 hover:text-white/60 transition-colors p-1.5 rounded-lg hover:bg-white/5"
+              className="text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-lg hover:bg-gray-100"
             >
               <XIcon />
             </button>
           </div>
 
-          {/* ── Amount hero ── */}
-          <div className="px-6 py-5 border-b border-white/[0.06]">
-            <p className="text-white/30 text-xs uppercase tracking-wider mb-1">Amount</p>
-            <p className={`amount-display font-bold text-3xl ${amountColor}`}>
+          {/* Amount hero */}
+          <div className="px-5 py-5 border-b border-gray-100">
+            <p className="section-label mb-1">Amount</p>
+            <p className={`amount-display font-bold text-3xl ${amountColor} ${failed ? 'line-through' : ''}`}>
               {amountPrefix}{formatCurrency(parseFloat(tx.amount), tx.currency)}
             </p>
+            {failed && <p className="text-bank-red text-xs mt-1 font-medium">This transaction failed</p>}
           </div>
 
-          {/* ── Receipt rows ── */}
-          <div className="px-6 py-4 space-y-0 border-b border-white/[0.06]">
-            <Row label="Status">
-              <StatusBadge status={tx.status} />
-            </Row>
-            <Row label="Type">
-              <span className="text-white text-sm capitalize">{tx.type}</span>
-            </Row>
-            <Row label="Date">
-              <span className="text-white text-sm">{formatDate(tx.createdAt)}</span>
-            </Row>
-            <Row label="From">
-              <span className="text-white text-sm">{displayFrom}</span>
-            </Row>
+          {/* Receipt rows */}
+          <div className="px-5 py-3 border-b border-gray-100 space-y-0">
+            <Row label="Status"><StatusBadge status={tx.status} /></Row>
+            <Row label="Type"><span className="text-gray-800 text-sm capitalize">{tx.type}</span></Row>
+            <Row label="Date"><span className="text-gray-800 text-sm">{formatDate(tx.createdAt)}</span></Row>
+            <Row label="From"><span className="text-gray-800 text-sm">{displayFrom}</span></Row>
             {tx.sender?.accountNumber && (
               <Row label="Sender Acc.">
-                <span className="text-white/60 text-xs font-mono">{tx.sender.accountNumber}</span>
+                <span className="text-gray-500 text-xs font-mono">{tx.sender.accountNumber}</span>
               </Row>
             )}
-            <Row label="To">
-              <span className="text-white text-sm">{displayTo}</span>
-            </Row>
+            <Row label="To"><span className="text-gray-800 text-sm">{displayTo}</span></Row>
             {tx.receiver?.accountNumber && (
               <Row label="Receiver Acc.">
-                <span className="text-white/60 text-xs font-mono">{tx.receiver.accountNumber}</span>
+                <span className="text-gray-500 text-xs font-mono">{tx.receiver.accountNumber}</span>
               </Row>
             )}
             {tx.description && (
               <Row label="Note">
-                <span className="text-white/70 text-sm">{tx.description}</span>
+                <span className="text-gray-600 text-sm">{tx.description}</span>
               </Row>
             )}
             <Row label="Transaction ID">
-              <span className="text-white/40 text-[10px] font-mono break-all">{tx.id}</span>
+              <span className="text-gray-400 text-[10px] font-mono break-all">{tx.id}</span>
             </Row>
           </div>
 
-          {/* ── Actions ── */}
-          <div className="px-6 py-4 space-y-3">
-            {/* Download */}
+          {/* Actions */}
+          <div className="px-5 py-4 space-y-2.5">
             <button
               onClick={handleDownload}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
-                         bg-accent/10 text-accent border border-accent/20
-                         hover:bg-accent/20 transition-all text-sm font-medium"
+                         bg-[#EEF4FF] text-navy border border-navy/15
+                         hover:bg-[#E0EAFF] transition-all text-sm font-medium"
             >
               <DownloadIcon />
               Download Receipt
             </button>
 
-            {/* Delete — shows confirm inline */}
             {!confirm ? (
               <button
                 onClick={() => setConfirm(true)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
-                           bg-white/[0.03] text-white/30 border border-white/[0.06]
-                           hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20
+                           text-gray-400 border border-gray-200
+                           hover:bg-red-50 hover:text-bank-red hover:border-red-200
                            transition-all text-sm font-medium"
               >
                 <TrashIcon />
                 Remove from History
               </button>
             ) : (
-              <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
-                <p className="text-white/70 text-sm text-center mb-3">
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+                <p className="text-gray-700 text-sm text-center mb-3">
                   Remove this transaction from your history?
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setConfirm(false)}
                     disabled={deleting}
-                    className="flex-1 py-2 rounded-lg text-sm text-white/50
-                               bg-white/5 border border-white/10
-                               hover:text-white/80 hover:bg-white/8 transition-all"
+                    className="flex-1 py-2 rounded-lg text-sm text-gray-500 bg-white border border-gray-200 hover:bg-gray-50 transition-all"
                   >
                     Cancel
                   </button>
@@ -214,13 +195,13 @@ export default function TransactionModal({ transaction: tx, accountNumber, open,
                     onClick={handleDelete}
                     disabled={deleting}
                     className="flex-1 py-2 rounded-lg text-sm font-semibold
-                               bg-red-500/20 text-red-400 border border-red-500/30
-                               hover:bg-red-500/30 transition-all
+                               bg-bank-red/10 text-bank-red border border-bank-red/20
+                               hover:bg-bank-red/20 transition-all
                                disabled:opacity-50 disabled:cursor-not-allowed
                                flex items-center justify-center gap-1.5"
                   >
                     {deleting ? <Spinner /> : null}
-                    {deleting ? 'Deleting…' : 'Yes, Remove'}
+                    {deleting ? 'Removing…' : 'Yes, Remove'}
                   </button>
                 </div>
               </div>
@@ -232,8 +213,6 @@ export default function TransactionModal({ transaction: tx, accountNumber, open,
   );
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 function resolveDirection(tx, accountNumber) {
   if (tx.type === 'credit') return 'in';
   if (tx.type === 'debit')  return 'out';
@@ -241,10 +220,10 @@ function resolveDirection(tx, accountNumber) {
 }
 
 const STATUS_STYLES = {
-  completed: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  pending:   'bg-yellow-500/10  text-yellow-400  border-yellow-500/20',
-  failed:    'bg-red-500/10     text-red-400     border-red-500/20',
-  reversed:  'bg-white/10       text-white/40    border-white/10',
+  completed: 'bg-emerald-50 text-bank-green border-emerald-200',
+  pending:   'bg-amber-50 text-bank-amber border-amber-200',
+  failed:    'bg-red-50 text-bank-red border-red-200',
+  reversed:  'bg-gray-100 text-gray-400 border-gray-200',
 };
 
 function StatusBadge({ status }) {
@@ -257,29 +236,17 @@ function StatusBadge({ status }) {
 
 function Row({ label, children }) {
   return (
-    <div className="flex items-start justify-between py-2.5 border-b border-white/[0.04] last:border-0 gap-4">
-      <span className="text-white/30 text-xs shrink-0 pt-0.5">{label}</span>
+    <div className="flex items-start justify-between py-2.5 border-b border-gray-50 last:border-0 gap-4">
+      <span className="text-gray-400 text-xs shrink-0 pt-0.5">{label}</span>
       <div className="text-right">{children}</div>
     </div>
   );
 }
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-function XIcon() {
-  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
-}
-function ArrowDownIcon() {
-  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>;
-}
-function ArrowUpIcon() {
-  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>;
-}
-function DownloadIcon() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
-}
-function TrashIcon() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>;
-}
-function Spinner() {
-  return <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".25"/><path d="M21 12a9 9 0 00-9-9"/></svg>;
-}
+function XIcon()        { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>; }
+function ArrowDownIcon(){ return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1A7A4A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>; }
+function ArrowUpIcon()  { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0072CE" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>; }
+function FailIcon()     { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>; }
+function DownloadIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>; }
+function TrashIcon()    { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>; }
+function Spinner()      { return <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".25"/><path d="M21 12a9 9 0 00-9-9"/></svg>; }

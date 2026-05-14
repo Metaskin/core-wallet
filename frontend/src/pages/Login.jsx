@@ -56,7 +56,7 @@ export default function Login() {
 // ─── Shared wrapper ───────────────────────────────────────────────────────────
 function Shell({ children }) {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
       <div className="w-full max-w-sm animate-fade-up">
         <div className="flex items-center gap-3 mb-10 justify-center">
           <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center text-white font-bold">C</div>

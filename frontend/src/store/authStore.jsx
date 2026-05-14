@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { authAPI } from '../api';
+import { getInitials } from '../utils/formatters';
 
 const AuthContext = createContext(null);
 
@@ -116,11 +117,36 @@ export const AuthProvider = ({ children }) => {
     setUser(data.data.user);
   }, []);
 
+  // Enrich user with computed display fields
+  const enrichedUser = useMemo(() => {
+    if (!user) return null;
+    const parts = (user.fullName || '').trim().split(/\s+/);
+    return {
+      ...user,
+      firstName:      parts[0] || '',
+      lastName:       parts.slice(1).join(' ') || '',
+      avatarInitials: getInitials(user.fullName),
+    };
+  }, [user]);
+
+  // Enrich account with computed fields
+  const enrichedAccount = useMemo(() => {
+    if (!account) return null;
+    const num = account.accountNumber || '';
+    return {
+      ...account,
+      maskedAccountNumber: num ? `•••• ${num.slice(-4)}` : '—',
+      ledgerBalance:       account.balance            ?? 0,
+      availableBalance:    account.availableBalance   ?? account.balance ?? 0,
+      pendingBalance:      account.pendingBalance     ?? 0,
+    };
+  }, [account]);
+
   const contextValue = useMemo(() => ({
-    user, account, loading,
+    user: enrichedUser, account: enrichedAccount, loading,
     hydrate, login, verifyOtp, register, logout, refreshAccount,
     changePassword, changeEmail,
-  }), [user, account, loading, hydrate, login, verifyOtp, register, logout, refreshAccount, changePassword, changeEmail]);
+  }), [enrichedUser, enrichedAccount, loading, hydrate, login, verifyOtp, register, logout, refreshAccount, changePassword, changeEmail]);
 
   return (
     <AuthContext.Provider value={contextValue}>
