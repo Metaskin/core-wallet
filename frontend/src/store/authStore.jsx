@@ -4,23 +4,19 @@ import { getInitials } from '../utils/formatters';
 
 const AuthContext = createContext(null);
 
-// ─── Token storage helpers ─────────────────────────────────────────────────
-// When rememberMe=true  → localStorage  (survives browser close)
-// When rememberMe=false → sessionStorage (cleared when tab/browser closes)
 const TOKEN_KEY = 'cw_token';
 
 function saveToken(token, remember) {
   if (remember) {
     localStorage.setItem(TOKEN_KEY, token);
-    sessionStorage.removeItem(TOKEN_KEY);   // clear the other store
+    sessionStorage.removeItem(TOKEN_KEY);
   } else {
     sessionStorage.setItem(TOKEN_KEY, token);
-    localStorage.removeItem(TOKEN_KEY);     // clear the other store
+    localStorage.removeItem(TOKEN_KEY);
   }
 }
 
 function readToken() {
-  // sessionStorage takes priority (more recent, same-tab session)
   return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || null;
 }
 
@@ -29,84 +25,75 @@ function clearToken() {
   sessionStorage.removeItem(TOKEN_KEY);
 }
 
-// ─── Provider ──────────────────────────────────────────────────────────────
+// ─── Provider ─────────────────────────────────────────────────────────────────
 export const AuthProvider = ({ children }) => {
-  const [user,    setUser]    = useState(null);
-  const [account, setAccount] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user,     setUser]     = useState(null);
+  const [account,  setAccount]  = useState(null);   // primary checking
+  const [accounts, setAccounts] = useState([]);      // all accounts
+  const [loading,  setLoading]  = useState(true);
 
-  // Called once on app mount — restores session from whichever storage has a token
+  const setSession = useCallback(({ user, account, accounts }) => {
+    setUser(user);
+    setAccount(account || null);
+    setAccounts(Array.isArray(accounts) ? accounts : (account ? [account] : []));
+  }, []);
+
   const hydrate = useCallback(async () => {
     const token = readToken();
     if (!token) { setLoading(false); return; }
     try {
       const { data } = await authAPI.me();
-      setUser(data.data.user);
-      setAccount(data.data.account);
+      setSession(data.data);
     } catch {
       clearToken();
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setSession]);
 
-  // Returns { requiresOtp: true, userId } when OTP is needed, otherwise sets session directly.
   const login = useCallback(async (email, password, rememberMe = true) => {
     console.log('[Auth] login() called — payload:', { email, password: '***' });
     const response = await authAPI.login({ email, password });
-    console.log('[Auth] login() response status:', response.status);
-    console.log('[Auth] login() response body:', response.data);
-
     const body = response.data;
-    if (!body || !body.data) {
-      console.error('[Auth] login() unexpected response shape — body.data is missing:', body);
-      throw new Error('Unexpected server response. Please try again.');
-    }
+    if (!body || !body.data) throw new Error('Unexpected server response. Please try again.');
 
     if (body.data.requiresOtp) {
-      console.log('[Auth] login() → requiresOtp=true  userId:', body.data.userId);
       return { requiresOtp: true, userId: body.data.userId };
     }
 
-    const { user, account, token } = body.data;
+    const { user, account, accounts, token } = body.data;
     saveToken(token, rememberMe);
-    setUser(user);
-    setAccount(account);
-    console.log('[Auth] login() → session set directly (no OTP)');
+    setSession({ user, account, accounts });
     return { requiresOtp: false };
-  }, []);
+  }, [setSession]);
 
   const verifyOtp = useCallback(async (userId, code, rememberMe = true) => {
-    console.log('[Auth] verifyOtp() called — userId:', userId);
     const response = await authAPI.verifyOtp({ userId, code });
-    console.log('[Auth] verifyOtp() response status:', response.status);
-    const { user, account, token } = response.data.data;
+    const { user, account, accounts, token } = response.data.data;
     saveToken(token, rememberMe);
-    setUser(user);
-    setAccount(account);
-    console.log('[Auth] verifyOtp() → session established for', user?.email);
-  }, []);
+    setSession({ user, account, accounts });
+  }, [setSession]);
 
   const register = useCallback(async (email, password, fullName, avatarColor) => {
     const { data } = await authAPI.register({ email, password, fullName, avatarColor });
-    const { user, account, token } = data.data;
+    const { user, account, accounts, token } = data.data;
     saveToken(token, true);
-    setUser(user);
-    setAccount(account);
-  }, []);
+    setSession({ user, account, accounts });
+  }, [setSession]);
 
   const logout = useCallback(() => {
     clearToken();
     setUser(null);
     setAccount(null);
+    setAccounts([]);
   }, []);
 
   const refreshAccount = useCallback(async () => {
     try {
       const { data } = await authAPI.me();
-      setAccount(data.data.account);
+      setSession(data.data);
     } catch {}
-  }, []);
+  }, [setSession]);
 
   const changePassword = useCallback(async (currentPassword, newPassword) => {
     await authAPI.changePassword({ currentPassword, newPassword });
@@ -117,7 +104,7 @@ export const AuthProvider = ({ children }) => {
     setUser(data.data.user);
   }, []);
 
-  // Enrich user with computed display fields
+  // ── Enriched user: adds display-friendly computed fields ─────────────────────
   const enrichedUser = useMemo(() => {
     if (!user) return null;
     const parts = (user.fullName || '').trim().split(/\s+/);
@@ -129,24 +116,58 @@ export const AuthProvider = ({ children }) => {
     };
   }, [user]);
 
-  // Enrich account with computed fields
+  // ── Enriched single account (primary checking — backward compat) ──────────────
   const enrichedAccount = useMemo(() => {
     if (!account) return null;
     const num = account.accountNumber || '';
     return {
       ...account,
       maskedAccountNumber: num ? `•••• ${num.slice(-4)}` : '—',
-      ledgerBalance:       account.balance            ?? 0,
-      availableBalance:    account.availableBalance   ?? account.balance ?? 0,
-      pendingBalance:      account.pendingBalance     ?? 0,
+      ledgerBalance:       account.balance          ?? 0,
+      availableBalance:    account.availableBalance  ?? account.balance ?? 0,
+      pendingBalance:      account.pendingBalance    ?? 0,
     };
   }, [account]);
 
+  // ── Enriched all accounts (checking + savings) ───────────────────────────────
+  const enrichedAccounts = useMemo(() =>
+    accounts.map(a => {
+      const num = a.accountNumber || '';
+      return {
+        ...a,
+        maskedAccountNumber: num ? `•••• ${num.slice(-4)}` : '—',
+        ledgerBalance:       a.balance          ?? 0,
+        availableBalance:    a.availableBalance  ?? a.balance ?? 0,
+        pendingBalance:      a.pendingBalance    ?? 0,
+      };
+    }),
+  [accounts]);
+
+  const primaryChecking = useMemo(
+    () => enrichedAccounts.find(a => a.accountType === 'checking') || enrichedAccount,
+    [enrichedAccounts, enrichedAccount]
+  );
+
+  const primarySavings = useMemo(
+    () => enrichedAccounts.find(a => a.accountType === 'savings') || null,
+    [enrichedAccounts]
+  );
+
   const contextValue = useMemo(() => ({
-    user: enrichedUser, account: enrichedAccount, loading,
+    user: enrichedUser,
+    account: enrichedAccount,          // primary checking (backward compat)
+    accounts: enrichedAccounts,
+    primaryChecking,
+    primarySavings,
+    loading,
     hydrate, login, verifyOtp, register, logout, refreshAccount,
     changePassword, changeEmail,
-  }), [enrichedUser, enrichedAccount, loading, hydrate, login, verifyOtp, register, logout, refreshAccount, changePassword, changeEmail]);
+  }), [
+    enrichedUser, enrichedAccount, enrichedAccounts,
+    primaryChecking, primarySavings,
+    loading, hydrate, login, verifyOtp, register, logout, refreshAccount,
+    changePassword, changeEmail,
+  ]);
 
   return (
     <AuthContext.Provider value={contextValue}>

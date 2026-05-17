@@ -16,13 +16,15 @@ const transfer = asyncHandler(async (req, res) => {
 });
 
 const getMyTransactions = asyncHandler(async (req, res) => {
-  if (!req.account) {
+  const accounts = req.accounts || (req.account ? [req.account] : []);
+  if (!accounts.length) {
     return res.json({ status: 'success', data: { transactions: [], pagination: { page: 1, limit: 20, total: 0 } } });
   }
   const page  = Math.max(1, parseInt(req.query.page  || PAGINATION.DEFAULT_PAGE));
   const limit = Math.min(PAGINATION.MAX_LIMIT, parseInt(req.query.limit || PAGINATION.DEFAULT_LIMIT));
+  const accountIds = accounts.map(a => a.id);
 
-  const { rows, total } = await txService.getMyTransactions(req.account.id, { page, limit });
+  const { rows, total } = await txService.getMyTransactions(accountIds, { page, limit });
   res.json({
     status: 'success',
     data: {
@@ -47,10 +49,11 @@ const getAllTransactions = asyncHandler(async (req, res) => {
 });
 
 const deleteTransaction = asyncHandler(async (req, res) => {
-  if (!req.account) throw new AppError('Account not found', 404);
+  const accounts = req.accounts || (req.account ? [req.account] : []);
+  if (!accounts.length) throw new AppError('Account not found', 404);
   await txService.deleteTransaction({
     transactionId: req.params.id,
-    accountId:     req.account.id,
+    accountIds:    accounts.map(a => a.id),
   });
   res.json({ status: 'success', message: 'Transaction deleted' });
 });

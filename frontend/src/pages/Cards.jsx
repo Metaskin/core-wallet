@@ -205,6 +205,7 @@ export default function Cards() {
                   <div key={card.id}>
                     <CreditCard
                       card={card}
+                      ownerName={user?.fullName}
                       cvv={isNew ? newCard.cvv : rev?.cvv}
                       fullCardNumber={isNew ? newCard.fullNumber : rev?.fullNumber}
                     />

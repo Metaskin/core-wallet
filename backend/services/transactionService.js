@@ -288,21 +288,24 @@ const externalOutflow = async ({ accountId, amount, description, externalReferen
 };
 
 // ─── Get transactions for a user account ─────────────────────────────────────
-const getMyTransactions = async (accountId, { page, limit } = {}) =>
-  transactionRepo.findByAccountId(accountId, { page, limit });
+const getMyTransactions = async (accountIds, { page, limit } = {}) => {
+  const ids = Array.isArray(accountIds) ? accountIds : [accountIds];
+  return transactionRepo.findByAccountIds(ids, { page, limit });
+};
 
 const getAllTransactions = async ({ page, limit } = {}) =>
   transactionRepo.findAll({ page, limit });
 
 // ─── Soft-delete (user hides transaction from their view) ─────────────────────
-const deleteTransaction = async ({ transactionId, accountId }) => {
+const deleteTransaction = async ({ transactionId, accountId, accountIds }) => {
   const raw = await transactionRepo.findRawById(transactionId);
   if (!raw) throw new AppError('Transaction not found', 404);
   if (raw.is_deleted) throw new AppError('Transaction already deleted', 404);
 
+  const ids = accountIds || (accountId ? [accountId] : []);
   const isParty =
-    raw.sender_account_id   === accountId ||
-    raw.receiver_account_id === accountId;
+    ids.includes(raw.sender_account_id) ||
+    ids.includes(raw.receiver_account_id);
 
   if (!isParty) throw new AppError('Not authorised to delete this transaction', 403);
 

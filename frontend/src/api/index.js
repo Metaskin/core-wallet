@@ -14,7 +14,11 @@ export const authAPI = {
 
 // ─── Account ─────────────────────────────────────────────────────────────────
 export const accountAPI = {
-  getMe: () => client.get('/accounts/me'),
+  getMe:            ()                                                   => client.get('/accounts/me'),
+  getAll:           ()                                                   => client.get('/accounts/me'),
+  createSavings:    ()                                                   => client.post('/accounts/savings'),
+  internalTransfer: (fromAccountId, toAccountId, amount, description)   =>
+    client.post('/accounts/internal-transfer', { fromAccountId, toAccountId, amount, description }),
 };
 
 // ─── Transactions ─────────────────────────────────────────────────────────────

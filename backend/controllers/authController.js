@@ -39,27 +39,16 @@ const verifyOtp = asyncHandler(async (req, res) => {
 });
 
 const me = asyncHandler(async (req, res) => {
+  const sanitize = authService.sanitizeAccount;
+  const allAccounts = req.accounts || (req.account ? [req.account] : []);
+  const primary     = allAccounts.find(a => (a.account_type || a.accountType) === 'checking') || allAccounts[0] || null;
+
   res.json({
     status: 'success',
     data: {
-      user:    authService.sanitizeUser(req.user),
-      account: req.account ? (() => {
-        const ledger    = parseFloat(req.account.balance);
-        const pending   = parseFloat(req.account.pending_balance ?? 0);
-        const available = ledger;
-        const total     = ledger + pending;
-        return {
-          id:               req.account.id,
-          accountNumber:    req.account.account_number,
-          balance:          ledger,
-          ledgerBalance:    ledger,
-          availableBalance: available,
-          pendingBalance:   pending,
-          totalBalance:     total,
-          currency:         req.account.currency,
-          status:           req.account.status,
-        };
-      })() : null,
+      user:     authService.sanitizeUser(req.user),
+      account:  sanitize(primary),
+      accounts: allAccounts.map(sanitize),
     },
   });
 });

@@ -33,12 +33,20 @@ const register = async ({ email, password, fullName, avatarColor }) => {
 
   const result = await withTransaction(async (client) => {
     const user    = await userRepo.create({ email, passwordHash, fullName, avatarColor, role: 'user' }, client);
-    const account = await accountRepo.create({ userId: user.id, accountNumber, currency: 'USD', initialBalance: 0 }, client);
+    const account = await accountRepo.create({
+      userId: user.id, accountNumber, currency: 'USD', initialBalance: 0,
+      accountType: 'checking', routingNumber: '026009593', nickname: 'Checking Account',
+    }, client);
     return { user, account };
   });
 
   const token = generateToken(result.user.id);
-  return { user: sanitizeUser(result.user), account: sanitizeAccount(result.account), token };
+  return {
+    user:     sanitizeUser(result.user),
+    account:  sanitizeAccount(result.account),
+    accounts: [sanitizeAccount(result.account)],
+    token,
+  };
 };
 
 // ── Login ─────────────────────────────────────────────────────────────────────
@@ -133,9 +141,15 @@ const verifyOtp = async ({ userId, code }) => {
   if (!user.is_active) throw new AppError('Account is suspended', 403);
 
   await userRepo.updateLastLogin(user.id);
-  const account = await accountRepo.findByUserId(user.id);
-  const token   = generateToken(user.id);
-  return { user: sanitizeUser(user), account: sanitizeAccount(account), token };
+  const allAccounts = await accountRepo.findAllByUserId(user.id);
+  const primary     = allAccounts.find(a => a.account_type === 'checking') || allAccounts[0] || null;
+  const token       = generateToken(user.id);
+  return {
+    user:     sanitizeUser(user),
+    account:  sanitizeAccount(primary),
+    accounts: allAccounts.map(sanitizeAccount),
+    token,
+  };
 };
 
 // ── Forgot password: generate reset token ─────────────────────────────────────
@@ -242,6 +256,9 @@ const sanitizeUser = (u) => ({
 const sanitizeAccount = (a) => a ? ({
   id:            a.id,
   accountNumber: a.account_number,
+  accountType:   a.account_type   || 'checking',
+  routingNumber: a.routing_number || '026009593',
+  nickname:      a.nickname       || (a.account_type === 'savings' ? 'Savings Account' : 'Checking Account'),
   balance:       parseFloat(a.balance),
   currency:      a.currency,
   status:        a.status,

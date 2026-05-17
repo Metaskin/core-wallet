@@ -47,21 +47,30 @@ const create = async ({
   return rows[0];
 };
 
+// Single account — kept for backward compat
 const findByAccountId = async (accountId, { page = 1, limit = 20 } = {}, client = pool) => {
+  return findByAccountIds([accountId], { page, limit }, client);
+};
+
+// Multiple accounts (checking + savings combined view)
+const findByAccountIds = async (accountIds, { page = 1, limit = 20 } = {}, client = pool) => {
+  if (!accountIds?.length) return { rows: [], total: 0 };
   const offset = (page - 1) * limit;
   const { rows } = await client.query(
     `${BASE_SELECT}
-     WHERE (sa.id = $1 OR ra.id = $1) AND t.is_deleted = false
+     WHERE (t.sender_account_id   = ANY($1::uuid[])
+         OR t.receiver_account_id = ANY($1::uuid[]))
+       AND t.is_deleted = false
      ORDER BY t.created_at DESC
      LIMIT $2 OFFSET $3`,
-    [accountId, limit, offset]
+    [accountIds, limit, offset]
   );
   const count = await client.query(
     `SELECT COUNT(*) FROM transactions t
-     LEFT JOIN accounts sa ON sa.id = t.sender_account_id
-     LEFT JOIN accounts ra ON ra.id = t.receiver_account_id
-     WHERE (sa.id = $1 OR ra.id = $1) AND t.is_deleted = false`,
-    [accountId]
+     WHERE (t.sender_account_id   = ANY($1::uuid[])
+         OR t.receiver_account_id = ANY($1::uuid[]))
+       AND t.is_deleted = false`,
+    [accountIds]
   );
   return {
     rows: rows.map(formatTransaction),
@@ -75,7 +84,7 @@ const findAll = async ({ page = 1, limit = 50 } = {}, client = pool) => {
     `${BASE_SELECT} WHERE t.is_deleted = false ORDER BY t.created_at DESC LIMIT $1 OFFSET $2`,
     [limit, offset]
   );
-  const count = await client.query("SELECT COUNT(*) FROM transactions WHERE is_deleted = false");
+  const count = await client.query('SELECT COUNT(*) FROM transactions WHERE is_deleted = false');
   return {
     rows: rows.map(formatTransaction),
     total: parseInt(count.rows[0].count),
@@ -103,4 +112,4 @@ const softDelete = async (id, client = pool) => {
   );
 };
 
-module.exports = { create, findByAccountId, findAll, findById, findRawById, softDelete };
+module.exports = { create, findByAccountId, findByAccountIds, findAll, findById, findRawById, softDelete };
