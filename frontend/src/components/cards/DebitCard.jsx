@@ -60,7 +60,9 @@ export default function DebitCard({ card, accountNumber, balance, ownerName, cvv
             <div>
               <p className="text-white/40 text-[9px] uppercase tracking-widest mb-0.5">Card Holder</p>
               <p className="text-white font-semibold text-[13px] uppercase tracking-wide truncate max-w-[150px]">
-                {card?.cardHolderName || ownerName || 'CARD HOLDER'}
+                {(card?.cardHolderName && card.cardHolderName.toUpperCase() !== 'CARD HOLDER')
+                  ? card.cardHolderName
+                  : (ownerName || 'CARD HOLDER')}
               </p>
             </div>
             <div className="text-right">
@@ -113,7 +115,9 @@ export default function DebitCard({ card, accountNumber, balance, ownerName, cvv
               }}
             >
               <span className="text-black/25 text-[9px] italic select-none">
-                {card?.cardHolderName || ownerName || 'Authorized Signature'}
+                {(card?.cardHolderName && card.cardHolderName.toUpperCase() !== 'CARD HOLDER')
+                  ? card.cardHolderName
+                  : (ownerName || 'Authorized Signature')}
               </span>
             </div>
             <div className="shrink-0 flex flex-col items-center justify-center">

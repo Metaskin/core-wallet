@@ -84,7 +84,9 @@ export default function CreditCard({ card, cvv, fullCardNumber, ownerName }) {
             <div>
               <p className="text-white/40 text-[9px] uppercase tracking-widest mb-0.5">Card Holder</p>
               <p className="text-white font-semibold text-[13px] uppercase tracking-wide truncate max-w-[150px]">
-                {card.cardHolderName || ownerName || 'CARD HOLDER'}
+                {(card.cardHolderName && card.cardHolderName.toUpperCase() !== 'CARD HOLDER')
+                  ? card.cardHolderName
+                  : (ownerName || 'CARD HOLDER')}
               </p>
             </div>
             <div className="text-right">
@@ -119,7 +121,11 @@ export default function CreditCard({ card, cvv, fullCardNumber, ownerName }) {
               className="flex-1 rounded-sm h-9 flex items-center px-2"
               style={{ background: 'repeating-linear-gradient(to right, rgba(180,180,180,0.35) 0px, rgba(180,180,180,0.35) 4px, rgba(255,255,255,0.8) 4px, rgba(255,255,255,0.8) 8px)' }}
             >
-              <span className="text-black/25 text-[9px] italic select-none">{card.cardHolderName || ownerName || 'Authorized Signature'}</span>
+              <span className="text-black/25 text-[9px] italic select-none">
+                {(card.cardHolderName && card.cardHolderName.toUpperCase() !== 'CARD HOLDER')
+                  ? card.cardHolderName
+                  : (ownerName || 'Authorized Signature')}
+              </span>
             </div>
             <div className="shrink-0 flex flex-col items-center justify-center">
               <div className="bg-white rounded px-3 py-1 min-w-[44px] text-center">
