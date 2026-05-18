@@ -1,25 +1,30 @@
 -- ============================================================
--- 006_seed_smmy.sql
+-- 006_seed_smmy.sql  (Neon-safe, no transaction wrapper)
 -- ============================================================
--- Sets up checking + savings accounts, 2 cards, 134 synthetic
--- transactions (Jan 2022 – Nov 2025), and activity notifications
--- for the account: smmy23538@gmail.com
---
--- SAFE / IDEMPOTENT:
---   Accounts  → INSERT on conflict update balances only
---   Cards     → DELETE + re-INSERT (not immutable)
---   Transactions → ON CONFLICT (reference) DO NOTHING
---   Notifications → ON CONFLICT (id) DO NOTHING
---
--- References use range TXN-YYYY-9XXXXX to avoid collision
--- with the live sequence (which starts from 000001).
--- DO NOT run on any other user.
+-- Seeds demo data for smmy23538@gmail.com ONLY.
+-- Each DO $$ block is fully isolated and auto-commits.
+-- If one block fails it does NOT roll back the others.
+-- Safe to re-run: all inserts use ON CONFLICT DO NOTHING.
+-- Run the whole file at once or block-by-block.
 -- ============================================================
 
-BEGIN;
 
 -- ══════════════════════════════════════════════════════════════
--- 1. ACCOUNTS
+-- BLOCK 0 — Verify user exists before doing anything
+-- ══════════════════════════════════════════════════════════════
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM users WHERE LOWER(email) = 'smmy23538@gmail.com'
+  ) THEN
+    RAISE EXCEPTION 'STOP: user smmy23538@gmail.com not found — check email or run registration first';
+  END IF;
+  RAISE NOTICE '✓ Block 0 — user verified';
+END $$;
+
+
+-- ══════════════════════════════════════════════════════════════
+-- BLOCK 1 — Accounts (checking + savings)
 -- ══════════════════════════════════════════════════════════════
 DO $$
 DECLARE
@@ -28,23 +33,23 @@ DECLARE
   v_sav  UUID;
 BEGIN
   SELECT id INTO v_uid FROM users WHERE LOWER(email) = 'smmy23538@gmail.com';
-  IF v_uid IS NULL THEN
-    RAISE EXCEPTION 'User smmy23538@gmail.com not found — aborting seed';
-  END IF;
 
   -- Checking
   SELECT id INTO v_chk FROM accounts
     WHERE user_id = v_uid AND account_type = 'checking';
 
   IF v_chk IS NULL THEN
-    INSERT INTO accounts (user_id, account_number, balance, available_balance,
-                          pending_balance, currency, status, account_type,
-                          routing_number, nickname)
-    VALUES (v_uid,
-            '4521' || LPAD((ABS(hashtext(v_uid::text)) % 1000000)::text, 6, '0'),
-            67465.00, 67465.00, 0.00, 'USD', 'active', 'checking',
-            '026009593', 'Core Checking')
+    INSERT INTO accounts (
+      user_id, account_number, balance, available_balance, pending_balance,
+      currency, status, account_type, routing_number, nickname
+    ) VALUES (
+      v_uid,
+      '4521' || LPAD((ABS(hashtext(v_uid::text)) % 1000000)::text, 6, '0'),
+      67465.00, 67465.00, 0.00,
+      'USD', 'active', 'checking', '026009593', 'Core Checking'
+    )
     RETURNING id INTO v_chk;
+    RAISE NOTICE '  → Checking account created: %', v_chk;
   ELSE
     UPDATE accounts SET
       balance           = 67465.00,
@@ -53,6 +58,7 @@ BEGIN
       status            = 'active',
       nickname          = 'Core Checking'
     WHERE id = v_chk;
+    RAISE NOTICE '  → Checking account updated: %', v_chk;
   END IF;
 
   -- Savings
@@ -60,14 +66,17 @@ BEGIN
     WHERE user_id = v_uid AND account_type = 'savings';
 
   IF v_sav IS NULL THEN
-    INSERT INTO accounts (user_id, account_number, balance, available_balance,
-                          pending_balance, currency, status, account_type,
-                          routing_number, nickname)
-    VALUES (v_uid,
-            '9881' || LPAD((ABS(hashtext(v_uid::text || 'sv')) % 1000000)::text, 6, '0'),
-            17000.00, 17000.00, 0.00, 'USD', 'active', 'savings',
-            '026009593', 'Core Savings')
+    INSERT INTO accounts (
+      user_id, account_number, balance, available_balance, pending_balance,
+      currency, status, account_type, routing_number, nickname
+    ) VALUES (
+      v_uid,
+      '9881' || LPAD((ABS(hashtext(v_uid::text || 'sv')) % 1000000)::text, 6, '0'),
+      17000.00, 17000.00, 0.00,
+      'USD', 'active', 'savings', '026009593', 'Core Savings'
+    )
     RETURNING id INTO v_sav;
+    RAISE NOTICE '  → Savings account created: %', v_sav;
   ELSE
     UPDATE accounts SET
       balance           = 17000.00,
@@ -76,14 +85,15 @@ BEGIN
       status            = 'active',
       nickname          = 'Core Savings'
     WHERE id = v_sav;
+    RAISE NOTICE '  → Savings account updated: %', v_sav;
   END IF;
 
-  RAISE NOTICE 'Accounts ready — checking: %, savings: %', v_chk, v_sav;
+  RAISE NOTICE '✓ Block 1 — accounts ready';
 END $$;
 
 
 -- ══════════════════════════════════════════════════════════════
--- 2. CARDS  (attached to checking only)
+-- BLOCK 2 — Cards (physical debit only; user issues virtual)
 -- ══════════════════════════════════════════════════════════════
 DO $$
 DECLARE
@@ -93,24 +103,36 @@ DECLARE
 BEGIN
   SELECT u.id, u.full_name INTO v_uid, v_name
     FROM users u WHERE LOWER(u.email) = 'smmy23538@gmail.com';
+
   SELECT id INTO v_chk FROM accounts
     WHERE user_id = v_uid AND account_type = 'checking';
 
+  IF v_chk IS NULL THEN
+    RAISE EXCEPTION 'Block 2 aborted: checking account not found — run Block 1 first';
+  END IF;
+
+  -- Remove stale cards (wrong holder name, old credit card)
   DELETE FROM cards WHERE account_id = v_chk;
 
-  -- Physical Visa Debit
-  INSERT INTO cards (account_id, card_type, card_holder_name, expiry_month, expiry_year,
-                     last4, status, is_active, is_virtual, design, balance)
-  VALUES (v_chk, 'debit', v_name, 9, 2028, '4731', 'active', true, false, 'blue', 0.00);
+  -- Physical Visa Debit with real cardholder name
+  INSERT INTO cards (
+    account_id, card_type, card_holder_name,
+    expiry_month, expiry_year, last4,
+    status, is_active, is_virtual, design, balance
+  ) VALUES (
+    v_chk, 'debit', v_name,
+    9, 2028, '4731',
+    'active', true, false, 'blue', 0.00
+  );
 
-  -- Virtual card omitted — user will issue their own from the Cards page
-
-  RAISE NOTICE 'Cards created for checking: %', v_chk;
+  RAISE NOTICE '  → Debit card •4731 issued to %', v_name;
+  RAISE NOTICE '✓ Block 2 — cards ready';
 END $$;
 
 
 -- ══════════════════════════════════════════════════════════════
--- 3. TRANSACTIONS  (134 total, Jan 2022 – Nov 2025)
+-- BLOCK 3 — Transactions 2022  (refs 900001–900046, 46 rows)
+-- Payroll: $5,500.00/mo net
 -- ══════════════════════════════════════════════════════════════
 DO $$
 DECLARE
@@ -122,10 +144,9 @@ BEGIN
   SELECT id INTO v_chk FROM accounts WHERE user_id = v_uid AND account_type = 'checking';
   SELECT id INTO v_sav FROM accounts WHERE user_id = v_uid AND account_type = 'savings';
 
-  -- ──────────────────────────────────────────────────────────
-  -- 2022  (transactions 001–034)
-  -- Payroll: $5,500.00/mo net  |  Monthly salary ~$96k gross
-  -- ──────────────────────────────────────────────────────────
+  IF v_chk IS NULL THEN
+    RAISE EXCEPTION 'Block 3 aborted: checking account not found — run Block 1 first';
+  END IF;
 
   INSERT INTO transactions (reference,type,receiver_account_id,amount,description,status,created_at)
   VALUES ('TXN-2022-900001','credit',v_chk,5500.00,'Payroll — Accenture Federal Services','completed','2022-01-14 09:05:00+00')
@@ -240,7 +261,7 @@ BEGIN
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,sender_account_id,amount,description,status,created_at)
-  VALUES ('TXN-2022-900029','debit',v_chk,378.50,'Delta Air Lines — Flight CMH→LAS','completed','2022-08-15 06:30:00+00')
+  VALUES ('TXN-2022-900029','debit',v_chk,378.50,'Delta Air Lines — Flight CMH to LAS','completed','2022-08-15 06:30:00+00')
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,sender_account_id,amount,description,status,created_at)
@@ -292,7 +313,7 @@ BEGIN
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,sender_account_id,amount,description,status,created_at)
-  VALUES ('TXN-2022-900042','debit',v_chk,16.78,'Wendy''s #0445 — Dublin OH','completed','2022-11-25 12:45:00+00')
+  VALUES ('TXN-2022-900042','debit',v_chk,16.78,'Wendys #0445 — Dublin OH','completed','2022-11-25 12:45:00+00')
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,receiver_account_id,amount,description,status,created_at)
@@ -311,10 +332,27 @@ BEGIN
   VALUES ('TXN-2022-900046','debit',v_chk,178.90,'Costco Wholesale #0612 — Holiday','completed','2022-12-20 13:45:00+00')
   ON CONFLICT (reference) DO NOTHING;
 
-  -- ──────────────────────────────────────────────────────────
-  -- 2023  (transactions 047–079)
-  -- Payroll raised to $5,812.50/mo  (~5.7% merit increase)
-  -- ──────────────────────────────────────────────────────────
+  RAISE NOTICE '✓ Block 3 — 2022 transactions done (46 rows)';
+END $$;
+
+
+-- ══════════════════════════════════════════════════════════════
+-- BLOCK 4 — Transactions 2023  (refs 900047–900086, 40 rows)
+-- Payroll raised to $5,812.50/mo
+-- ══════════════════════════════════════════════════════════════
+DO $$
+DECLARE
+  v_uid UUID;
+  v_chk UUID;
+  v_sav UUID;
+BEGIN
+  SELECT id INTO v_uid FROM users WHERE LOWER(email) = 'smmy23538@gmail.com';
+  SELECT id INTO v_chk FROM accounts WHERE user_id = v_uid AND account_type = 'checking';
+  SELECT id INTO v_sav FROM accounts WHERE user_id = v_uid AND account_type = 'savings';
+
+  IF v_chk IS NULL THEN
+    RAISE EXCEPTION 'Block 4 aborted: checking account not found — run Block 1 first';
+  END IF;
 
   INSERT INTO transactions (reference,type,receiver_account_id,amount,description,status,created_at)
   VALUES ('TXN-2023-900047','credit',v_chk,5812.50,'Payroll — Accenture Federal Services','completed','2023-01-13 09:05:00+00')
@@ -337,7 +375,7 @@ BEGIN
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,sender_account_id,amount,description,status,created_at)
-  VALUES ('TXN-2023-900052','debit',v_chk,12.45,'Wendy''s #0445 — Dublin OH','completed','2023-02-19 13:10:00+00')
+  VALUES ('TXN-2023-900052','debit',v_chk,12.45,'Wendys #0445 — Dublin OH','completed','2023-02-19 13:10:00+00')
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,receiver_account_id,amount,description,status,created_at)
@@ -381,11 +419,11 @@ BEGIN
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,sender_account_id,amount,description,status,created_at)
-  VALUES ('TXN-2023-900063','debit',v_chk,123.45,'Target #0891 — Household & Apparel','completed','2023-06-15 14:30:00+00')
+  VALUES ('TXN-2023-900063','debit',v_chk,123.45,'Target #0891 — Household and Apparel','completed','2023-06-15 14:30:00+00')
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,sender_account_id,amount,description,status,created_at)
-  VALUES ('TXN-2023-900064','debit',v_chk,412.00,'Delta Air Lines — Flight CMH→MIA','completed','2023-06-18 06:00:00+00')
+  VALUES ('TXN-2023-900064','debit',v_chk,412.00,'Delta Air Lines — Flight CMH to MIA','completed','2023-06-18 06:00:00+00')
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,receiver_account_id,amount,description,status,created_at)
@@ -476,10 +514,27 @@ BEGIN
   VALUES ('TXN-2023-900086','debit',v_chk,189.45,'Costco Wholesale #0612 — Holiday','completed','2023-12-21 12:30:00+00')
   ON CONFLICT (reference) DO NOTHING;
 
-  -- ──────────────────────────────────────────────────────────
-  -- 2024  (transactions 087–119)
-  -- Payroll raised to $6,123.00/mo  (~5.3% merit increase)
-  -- ──────────────────────────────────────────────────────────
+  RAISE NOTICE '✓ Block 4 — 2023 transactions done (40 rows)';
+END $$;
+
+
+-- ══════════════════════════════════════════════════════════════
+-- BLOCK 5 — Transactions 2024  (refs 900087–900122, 36 rows)
+-- Payroll raised to $6,123.00/mo
+-- ══════════════════════════════════════════════════════════════
+DO $$
+DECLARE
+  v_uid UUID;
+  v_chk UUID;
+  v_sav UUID;
+BEGIN
+  SELECT id INTO v_uid FROM users WHERE LOWER(email) = 'smmy23538@gmail.com';
+  SELECT id INTO v_chk FROM accounts WHERE user_id = v_uid AND account_type = 'checking';
+  SELECT id INTO v_sav FROM accounts WHERE user_id = v_uid AND account_type = 'savings';
+
+  IF v_chk IS NULL THEN
+    RAISE EXCEPTION 'Block 5 aborted: checking account not found — run Block 1 first';
+  END IF;
 
   INSERT INTO transactions (reference,type,receiver_account_id,amount,description,status,created_at)
   VALUES ('TXN-2024-900087','credit',v_chk,6123.00,'Payroll — Accenture Federal Services','completed','2024-01-12 09:05:00+00')
@@ -546,7 +601,7 @@ BEGIN
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,sender_account_id,amount,description,status,created_at)
-  VALUES ('TXN-2024-900103','debit',v_chk,289.00,'Southwest Airlines — Flight CMH→DEN','completed','2024-06-15 07:30:00+00')
+  VALUES ('TXN-2024-900103','debit',v_chk,289.00,'Southwest Airlines — Flight CMH to DEN','completed','2024-06-15 07:30:00+00')
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,sender_account_id,amount,description,status,created_at)
@@ -625,10 +680,27 @@ BEGIN
   VALUES ('TXN-2024-900122','debit',v_chk,156.78,'Target #0891 — Holiday Shopping','completed','2024-12-19 15:10:00+00')
   ON CONFLICT (reference) DO NOTHING;
 
-  -- ──────────────────────────────────────────────────────────
-  -- 2025  (transactions 123–134)
-  -- Payroll raised to $6,400.00/mo  (~4.5% merit increase)
-  -- ──────────────────────────────────────────────────────────
+  RAISE NOTICE '✓ Block 5 — 2024 transactions done (36 rows)';
+END $$;
+
+
+-- ══════════════════════════════════════════════════════════════
+-- BLOCK 6 — Transactions 2025  (refs 900123–900158, 36 rows)
+-- Payroll raised to $6,400.00/mo
+-- ══════════════════════════════════════════════════════════════
+DO $$
+DECLARE
+  v_uid UUID;
+  v_chk UUID;
+  v_sav UUID;
+BEGIN
+  SELECT id INTO v_uid FROM users WHERE LOWER(email) = 'smmy23538@gmail.com';
+  SELECT id INTO v_chk FROM accounts WHERE user_id = v_uid AND account_type = 'checking';
+  SELECT id INTO v_sav FROM accounts WHERE user_id = v_uid AND account_type = 'savings';
+
+  IF v_chk IS NULL THEN
+    RAISE EXCEPTION 'Block 6 aborted: checking account not found — run Block 1 first';
+  END IF;
 
   INSERT INTO transactions (reference,type,receiver_account_id,amount,description,status,created_at)
   VALUES ('TXN-2025-900123','credit',v_chk,6400.00,'Payroll — Accenture Federal Services','completed','2025-01-14 09:05:00+00')
@@ -695,7 +767,7 @@ BEGIN
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,sender_account_id,amount,description,status,created_at)
-  VALUES ('TXN-2025-900139','debit',v_chk,145.67,'Target #0891 — Household & Electronics','completed','2025-06-15 14:55:00+00')
+  VALUES ('TXN-2025-900139','debit',v_chk,145.67,'Target #0891 — Household and Electronics','completed','2025-06-15 14:55:00+00')
   ON CONFLICT (reference) DO NOTHING;
 
   INSERT INTO transactions (reference,type,sender_account_id,amount,description,status,created_at)
@@ -770,108 +842,100 @@ BEGIN
   VALUES ('TXN-2025-900157','debit',v_chk,9.99,'Spotify Premium — Monthly','completed','2025-11-18 00:00:00+00')
   ON CONFLICT (reference) DO NOTHING;
 
-  -- Transfer from savings → checking (Nov 2025, brings checking to target)
   INSERT INTO transactions (reference,type,sender_account_id,receiver_account_id,amount,description,status,created_at)
   VALUES ('TXN-2025-900158','transfer',v_sav,v_chk,2000.00,'Transfer from Core Savings','completed','2025-11-20 12:00:00+00')
   ON CONFLICT (reference) DO NOTHING;
 
-  RAISE NOTICE 'Transactions inserted (idempotent)';
+  RAISE NOTICE '✓ Block 6 — 2025 transactions done (36 rows)';
 END $$;
 
 
 -- ══════════════════════════════════════════════════════════════
--- 4. NOTIFICATIONS
+-- BLOCK 7 — Notifications (10 rows)
 -- ══════════════════════════════════════════════════════════════
 DO $$
 DECLARE
   v_uid UUID;
-  v_n1 UUID := 'a1000001-0000-4000-8000-000000000001';
-  v_n2 UUID := 'a1000001-0000-4000-8000-000000000002';
-  v_n3 UUID := 'a1000001-0000-4000-8000-000000000003';
-  v_n4 UUID := 'a1000001-0000-4000-8000-000000000004';
-  v_n5 UUID := 'a1000001-0000-4000-8000-000000000005';
-  v_n6 UUID := 'a1000001-0000-4000-8000-000000000006';
-  v_n7 UUID := 'a1000001-0000-4000-8000-000000000007';
-  v_n8 UUID := 'a1000001-0000-4000-8000-000000000008';
-  v_n9 UUID := 'a1000001-0000-4000-8000-000000000009';
-  v_n10 UUID := 'a1000001-0000-4000-8000-000000000010';
 BEGIN
   SELECT id INTO v_uid FROM users WHERE LOWER(email) = 'smmy23538@gmail.com';
 
   INSERT INTO notifications (id,user_id,type,title,message,severity,is_read,created_at)
-  VALUES (v_n1,v_uid,'account_opened','Welcome to Core Wallet',
+  VALUES ('a1000001-0000-4000-8000-000000000001',v_uid,'account_opened','Welcome to Core Wallet',
     'Your Core Checking account is active. Manage your money, send payments, and track spending all in one place.',
     'success',true,'2022-01-14 09:06:00+00')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO notifications (id,user_id,type,title,message,severity,is_read,created_at)
-  VALUES (v_n2,v_uid,'deposit_received','Direct Deposit Received',
+  VALUES ('a1000001-0000-4000-8000-000000000002',v_uid,'deposit_received','Direct Deposit Received',
     'Your payroll deposit of $5,500.00 from Accenture Federal Services has been credited to your Checking account.',
     'success',true,'2022-01-14 09:05:30+00')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO notifications (id,user_id,type,title,message,severity,is_read,created_at)
-  VALUES (v_n3,v_uid,'account_opened','Savings Account Opened',
+  VALUES ('a1000001-0000-4000-8000-000000000003',v_uid,'account_opened','Savings Account Opened',
     'Your Core Savings account is now active. Start building your emergency fund with automatic transfers.',
     'success',true,'2022-05-28 12:01:00+00')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO notifications (id,user_id,type,title,message,severity,is_read,created_at)
-  VALUES (v_n4,v_uid,'large_transaction','Large Purchase Detected',
-    'A purchase of $378.50 was made at Delta Air Lines on Aug 15, 2022. If this wasn''t you, contact support immediately.',
+  VALUES ('a1000001-0000-4000-8000-000000000004',v_uid,'large_transaction','Large Purchase Detected',
+    'A purchase of $378.50 was made at Delta Air Lines on Aug 15, 2022. If this was not you, contact support immediately.',
     'warning',true,'2022-08-15 06:31:00+00')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO notifications (id,user_id,type,title,message,severity,is_read,created_at)
-  VALUES (v_n5,v_uid,'transfer_complete','Transfer Complete',
+  VALUES ('a1000001-0000-4000-8000-000000000005',v_uid,'transfer_complete','Transfer Complete',
     'Your transfer of $750.00 to Core Savings was completed successfully.',
     'success',true,'2023-04-20 12:01:00+00')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO notifications (id,user_id,type,title,message,severity,is_read,created_at)
-  VALUES (v_n6,v_uid,'balance_milestone','Balance Milestone Reached',
-    'Congratulations! Your combined account balance has passed $50,000. You''re on track to meet your savings goals.',
+  VALUES ('a1000001-0000-4000-8000-000000000006',v_uid,'balance_milestone','Balance Milestone Reached',
+    'Congratulations! Your combined account balance has passed $50,000. You are on track to meet your savings goals.',
     'info',true,'2024-06-14 09:06:00+00')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO notifications (id,user_id,type,title,message,severity,is_read,created_at)
-  VALUES (v_n7,v_uid,'card_issued','Debit Card Activated',
+  VALUES ('a1000001-0000-4000-8000-000000000007',v_uid,'card_issued','Debit Card Activated',
     'Your Visa Debit Card ending in 4731 is active and ready to use. Set your PIN in the Cards section.',
     'info',true,'2022-01-14 09:07:00+00')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO notifications (id,user_id,type,title,message,severity,is_read,created_at)
-  VALUES (v_n8,v_uid,'deposit_received','Direct Deposit Received',
+  VALUES ('a1000001-0000-4000-8000-000000000008',v_uid,'deposit_received','Direct Deposit Received',
     'Your payroll deposit of $6,400.00 from Accenture Federal Services has been credited to your Checking account.',
     'success',false,'2025-11-14 09:05:30+00')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO notifications (id,user_id,type,title,message,severity,is_read,created_at)
-  VALUES (v_n9,v_uid,'transfer_complete','Transfer Received',
+  VALUES ('a1000001-0000-4000-8000-000000000009',v_uid,'transfer_complete','Transfer Received',
     'A transfer of $2,000.00 from Core Savings has been credited to your Checking account.',
     'success',false,'2025-11-20 12:01:00+00')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO notifications (id,user_id,type,title,message,severity,is_read,created_at)
-  VALUES (v_n10,v_uid,'security','Annual Account Review',
+  VALUES ('a1000001-0000-4000-8000-000000000010',v_uid,'security','Annual Account Review',
     'Your account is in good standing. Review your security settings and ensure your contact info is up to date.',
     'info',false,'2025-11-15 08:00:00+00')
   ON CONFLICT (id) DO NOTHING;
 
-  RAISE NOTICE 'Notifications inserted';
+  RAISE NOTICE '✓ Block 7 — notifications done (10 rows)';
 END $$;
 
-COMMIT;
 
--- ── Verify ────────────────────────────────────────────────────
+-- ══════════════════════════════════════════════════════════════
+-- VERIFY — Final summary (run last to confirm everything landed)
+-- ══════════════════════════════════════════════════════════════
 SELECT
-  a.account_type,
+  a.account_type                                          AS type,
   a.nickname,
   a.balance,
   a.available_balance,
   (SELECT COUNT(*) FROM transactions t
-    WHERE t.sender_account_id = a.id OR t.receiver_account_id = a.id) AS tx_count
-FROM accounts a
-JOIN users u ON u.id = a.user_id
+   WHERE t.sender_account_id = a.id
+      OR t.receiver_account_id = a.id)                   AS tx_count,
+  (SELECT COUNT(*) FROM cards c WHERE c.account_id = a.id) AS card_count
+FROM  accounts a
+JOIN  users    u ON u.id = a.user_id
 WHERE LOWER(u.email) = 'smmy23538@gmail.com'
 ORDER BY a.account_type;
