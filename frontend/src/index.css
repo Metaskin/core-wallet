@@ -4,11 +4,46 @@
 
 @layer base {
   * { box-sizing: border-box; }
-  html { -webkit-font-smoothing: antialiased; }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent font-size inflation on iOS when rotating */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Momentum scrolling across the whole page */
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    /* Prevent rubber-banding pull-to-refresh on the root (we add it per-scroll-area) */
+    overscroll-behavior-y: none;
+  }
+
   body {
     @apply bg-gray-50 text-gray-900 font-sans;
     min-height: 100vh;
+    min-height: 100dvh; /* dynamic viewport for mobile browsers */
+    /* Remove default tap highlight on Android Chrome */
+    -webkit-tap-highlight-color: transparent;
   }
+
+  /* Remove tap highlight on all interactive elements */
+  a, button, [role="button"], input, select, textarea, label {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation; /* removes 300ms tap delay */
+  }
+
+  /* Minimum font size 16px on inputs to prevent iOS auto-zoom */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+
   ::-webkit-scrollbar        { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track  { background: transparent; }
   ::-webkit-scrollbar-thumb  { @apply bg-gray-300 rounded-full; }
@@ -48,8 +83,11 @@
   .btn-primary {
     @apply flex items-center gap-2 justify-center px-5 py-2.5 rounded-lg
            bg-navy text-white font-semibold text-sm
-           hover:bg-[#002070] active:scale-[0.98]
+           hover:bg-[#002070]
            transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+    /* Mobile spring press */
+    active:scale-[0.97];
+    transform-origin: center;
   }
   .btn-ghost {
     @apply flex items-center gap-2 justify-center px-5 py-2.5 rounded-lg
@@ -97,7 +135,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* ── Shimmer — light theme ─────────────────────────────────────────────── */
+  /* ── Shimmer skeleton — light theme ────────────────────────────────────── */
   .shimmer {
     background: linear-gradient(90deg, #f3f4f6 0%, #e5e7eb 50%, #f3f4f6 100%);
     background-size: 200% 100%;
@@ -109,11 +147,21 @@
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.08);
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
   .glass-bright {
     background: rgba(255,255,255,0.07);
     border: 1px solid rgba(255,255,255,0.12);
     backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* ── Glass — light theme (nav bar on scroll) ────────────────────────────── */
+  .glass-light {
+    background: rgba(255,255,255,0.85);
+    border-bottom: 1px solid rgba(229,231,235,0.8);
+    backdrop-filter: saturate(1.8) blur(20px);
+    -webkit-backdrop-filter: saturate(1.8) blur(20px);
   }
 
   /* ── Payment card gradients (intentionally dark) ───────────────────────── */
@@ -123,6 +171,111 @@
   .card-gradient-black   { background: linear-gradient(135deg, #0a0a0a 0%, #171717 55%, #262626 100%); }
   .card-gradient-gold    { background: linear-gradient(135deg, #3b1507 0%, #78350f 35%, #a16207 68%, #ca8a04 100%); }
 
-  /* ── Utility ───────────────────────────────────────────────────────────── */
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  /* ── Safe area helpers ─────────────────────────────────────────────────── */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .safe-x {
+    padding-left:  env(safe-area-inset-left,  0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* ── Touch-friendly minimum tap targets ────────────────────────────────── */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* ── Premium spring press feedback ─────────────────────────────────────── */
+  .press-scale {
+    transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .press-scale:active {
+    transform: scale(0.96);
+  }
+
+  /* ── Bottom sheet / modal slide-up ─────────────────────────────────────── */
+  .sheet-enter {
+    animation: sheet-up 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  .sheet-exit {
+    animation: sheet-down 0.25s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+
+  /* ── Scrollable container with momentum ────────────────────────────────── */
+  .scroll-touch {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* ── Horizontal scroll strip (no visible scrollbar on mobile) ──────────── */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
 }
+
+/* ── Keyframe animations ─────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sheet-up {
+  from { opacity: 0.6; transform: translateY(100%); }
+  to   { opacity: 1;   transform: translateY(0); }
+}
+
+@keyframes sheet-down {
+  from { opacity: 1;   transform: translateY(0); }
+  to   { opacity: 0;   transform: translateY(100%); }
+}
+
+/* Spring bounce for card carousels / confirmations */
+@keyframes spring-in {
+  0%   { opacity: 0; transform: scale(0.88); }
+  60%  { opacity: 1; transform: scale(1.03); }
+  80%  { transform: scale(0.99); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.95); opacity: 0.6; }
+  70%  { transform: scale(1.15); opacity: 0; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+
+/* ── Animation utility classes ───────────────────────────────────────────── */
+.animate-fade-up    { animation: fade-up    0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-fade-in    { animation: fade-in    0.2s  ease both; }
+.animate-slide-down { animation: slide-down 0.2s  cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-spring-in  { animation: spring-in  0.4s  cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.animate-pulse-ring { animation: pulse-ring 1.5s  ease-out infinite; }
+
+/* ── Stagger helpers (use style={{ animationDelay: '0.Xs' }}) ────────────── */
+.stagger > * { animation: fade-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger > *:nth-child(1) { animation-delay: 0.00s; }
+.stagger > *:nth-child(2) { animation-delay: 0.05s; }
+.stagger > *:nth-child(3) { animation-delay: 0.10s; }
+.stagger > *:nth-child(4) { animation-delay: 0.15s; }
+.stagger > *:nth-child(5) { animation-delay: 0.20s; }
+.stagger > *:nth-child(6) { animation-delay: 0.25s; }

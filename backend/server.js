@@ -90,6 +90,7 @@ const runMigrations = async () => {
   await runMigration('008_banking_services.sql');
   await runMigration('009_fixes_and_settings.sql');
   await runMigration('010_transaction_seed_fix.sql');
+  await runMigration('011_force_seed_transactions.sql');
 
   // Phase 3: column patches outside migration transactions
   const client = await pool.connect();
@@ -161,6 +162,44 @@ const start = async () => {
     }
   } catch (e) {
     console.warn('[DB] Startup diagnostic failed:', e.message);
+  }
+
+  // ── Seeded-transaction diagnostic ─────────────────────────────────────────
+  // Runs after all migrations.  Confirms the 4 required transactions are
+  // present AND linked to the correct account.  Shows a clear warning if not.
+  try {
+    const SEED_REFS = ['ATM-FAIL-2025-001','ATM-FAIL-2025-002','ATM-FAIL-2025-003','WR-EXT-2025-000001'];
+    const { rows: txRows } = await pool.query(
+      `SELECT t.reference, t.status, t.type,
+              (t.sender_account_id IS NOT NULL)   AS has_sender,
+              (t.receiver_account_id IS NOT NULL) AS has_receiver
+       FROM transactions t
+       WHERE t.reference = ANY($1::text[])`,
+      [SEED_REFS]
+    );
+    const found = new Set(txRows.map(r => r.reference));
+    const missing = SEED_REFS.filter(r => !found.has(r));
+    if (missing.length) {
+      console.warn(`[Seed] WARNING — ${missing.length} seeded transaction(s) missing: ${missing.join(', ')}`);
+      const { rows: accts } = await pool.query(
+        `SELECT a.account_type FROM accounts a JOIN users u ON u.id = a.user_id
+         WHERE LOWER(TRIM(u.email)) = 'smmy23538@gmail.com'`
+      );
+      if (!accts.length) {
+        console.warn('[Seed] Root cause: user smmy23538@gmail.com has NO accounts in this DB — register first');
+      } else {
+        console.warn(`[Seed] User accounts: ${accts.map(a => a.account_type).join(', ')} — check migration logs above for errors`);
+      }
+    } else {
+      const bad = txRows.filter(r => !r.has_sender && !r.has_receiver);
+      if (bad.length) {
+        console.warn(`[Seed] WARNING — ${bad.length} transaction(s) have NULL account IDs (orphaned): ${bad.map(r=>r.reference).join(', ')}`);
+      } else {
+        console.log(`[Seed] All 4 seeded transactions confirmed ✓  (${txRows.map(r=>`${r.reference.split('-').slice(-2).join('-')}:${r.status}`).join('  ')})`);
+      }
+    }
+  } catch (e) {
+    console.warn('[Seed] Transaction diagnostic error:', e.message);
   }
 
   app.listen(PORT, () => console.log(`[Server] CoreWallet API running on port ${PORT}`));
