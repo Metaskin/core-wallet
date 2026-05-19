@@ -190,9 +190,12 @@ function AuthenticatedShell({ user }) {
       >
         {/* Drawer header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center text-white font-bold text-sm">C</div>
-            <span className="font-bold text-navy text-lg tracking-tight">CoreWallet</span>
+          <div className="flex items-center gap-2">
+            <MCTLogoMarkApp size={30} />
+            <div className="leading-none">
+              <div className="font-bold text-navy text-xs tracking-tight leading-none">Metropolitan Capital</div>
+              <div className="text-gray-400 text-[8px] tracking-widest uppercase leading-none mt-0.5">&amp; Trust Bank</div>
+            </div>
           </div>
           <button onClick={closeMenu} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
             <XIcon />
@@ -309,7 +312,7 @@ function AppShell() {
             <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".25"/>
             <path d="M21 12a9 9 0 00-9-9"/>
           </svg>
-          <span className="text-sm font-medium text-navy">Loading CoreWallet…</span>
+          <span className="text-sm font-medium text-navy">Loading MCT Bank…</span>
         </div>
       </div>
     );
@@ -337,6 +340,17 @@ export default function App() {
 // ── Icons ─────────────────────────────────────────────────────────────────────
 function XIcon() {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+}
+function MCTLogoMarkApp({ size = 30 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="8" fill="#003087"/>
+      <path d="M7 19 L20 9 L33 19" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      <rect x="8"  y="21" width="5" height="12" rx="1" fill="white" opacity="0.6"/>
+      <rect x="17" y="17" width="6" height="16" rx="1" fill="white"/>
+      <rect x="27" y="19" width="5" height="14" rx="1" fill="white" opacity="0.6"/>
+    </svg>
+  );
 }
 function IconHome()      { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>; }
 function IconCard()      { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>; }

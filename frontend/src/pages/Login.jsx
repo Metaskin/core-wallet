@@ -58,9 +58,18 @@ function Shell({ children }) {
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-4">
       <div className="w-full max-w-sm animate-fade-up">
-        <div className="flex items-center gap-3 mb-10 justify-center">
-          <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center text-white font-bold">C</div>
-          <span className="font-display font-bold text-white text-xl tracking-tight">CoreWallet</span>
+        <div className="flex flex-col items-center gap-2 mb-10">
+          <svg width="44" height="44" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="#003087"/>
+            <path d="M7 19 L20 9 L33 19" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <rect x="8"  y="21" width="5" height="12" rx="1" fill="white" opacity="0.6"/>
+            <rect x="17" y="17" width="6" height="16" rx="1" fill="white"/>
+            <rect x="27" y="19" width="5" height="14" rx="1" fill="white" opacity="0.6"/>
+          </svg>
+          <div className="text-center leading-none">
+            <div className="font-bold text-white text-base tracking-tight leading-none">Metropolitan Capital &amp; Trust Bank</div>
+            <div className="text-white/40 text-[10px] tracking-wider uppercase mt-1">Secure Online Banking</div>
+          </div>
         </div>
         {children}
       </div>
