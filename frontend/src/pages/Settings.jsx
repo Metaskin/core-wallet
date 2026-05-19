@@ -84,8 +84,15 @@ export default function Settings() {
 
 // ── 1. Profile & Identity ─────────────────────────────────────────────────────
 
+const EMPTY_PROFILE = {
+  first_name: '', last_name: '', phone: '', date_of_birth: '',
+  nationality: '', occupation: '', employer: '',
+  address_line1: '', address_line2: '', city: '', state: '', zip_code: '',
+  country: 'United States', preferred_language: 'en', timezone: 'America/New_York',
+};
+
 function ProfileSection({ user }) {
-  const [form,    setForm]    = useState(null);
+  const [form,    setForm]    = useState(EMPTY_PROFILE);
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
 
@@ -229,8 +236,10 @@ function ProfileSection({ user }) {
 
 // ── 2. Security Center ────────────────────────────────────────────────────────
 
+const EMPTY_SEC = { two_factor_enabled: false, two_factor_method: 'none', auto_logout_minutes: 30, biometric_enabled: false };
+
 function SecuritySection({ user, changePassword }) {
-  const [secSettings, setSecSettings] = useState(null);
+  const [secSettings, setSecSettings] = useState(EMPTY_SEC);
   const [loadingSec,  setLoadingSec]  = useState(true);
   const [savingSec,   setSavingSec]   = useState(false);
   const [hasPin,      setHasPin]      = useState(null);
@@ -374,14 +383,21 @@ function SecuritySection({ user, changePassword }) {
 
 // ── 3. Notifications ──────────────────────────────────────────────────────────
 
+const EMPTY_PREFS = {
+  push_enabled: true, email_enabled: true, sms_enabled: false,
+  deposit_alerts: true, transaction_alerts: true, security_alerts: true,
+  weekly_summary: true, monthly_summary: true, marketing: false,
+  quiet_hours_enabled: false, quiet_hours_start: '22:00', quiet_hours_end: '08:00',
+};
+
 function NotificationsSection() {
-  const [prefs,   setPrefs]   = useState(null);
+  const [prefs,   setPrefs]   = useState(EMPTY_PREFS);
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
 
   useEffect(() => {
     settingsAPI.getNotifPrefs()
-      .then(({ data: res }) => setPrefs(res.data || {}))
+      .then(({ data: res }) => setPrefs({ ...EMPTY_PREFS, ...(res.data || {}) }))
       .catch(() => toast.error('Failed to load notification preferences'))
       .finally(() => setLoading(false));
   }, []);
