@@ -43,10 +43,27 @@ export default function CreditScore() {
     );
   }
 
-  const score      = data?.score         || 0;
+  const current    = data?.current       || {};
+  const score      = current.score       || 0;
   const change     = data?.monthlyChange || 0;
-  const history    = data?.history       || [];
-  const factors    = data?.factors       || {};
+  const factors    = {
+    paymentHistory: parseFloat(current.payment_history_pct) || 0,
+    utilization:    parseFloat(current.utilization_pct)     || 0,
+    creditAge:      parseFloat(current.credit_age_years)    || 0,
+    hardInquiries:  parseInt(current.hard_inquiries)        || 0,
+  };
+  const rawHistory = data?.history || [];
+  // Build chart data: oldest → newest, with formatted month labels
+  const history = [...rawHistory].reverse().map(h => ({
+    score: parseInt(h.score),
+    month: h.month_year
+      ? (() => {
+          const [y, m] = h.month_year.split('-');
+          return new Date(parseInt(y), parseInt(m) - 1)
+            .toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+        })()
+      : '—',
+  }));
   const { text: scoreTextColor, label: scoreLabel, hex: scoreHex } = scoreColor(score);
 
   // Score gauge: 300–850 mapped to 0–100%

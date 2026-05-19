@@ -18,5 +18,6 @@ router.use('/wire-transfers', require('./wireTransfers'));
 router.use('/bill-pay',       require('./billPay'));
 router.use('/credit-score',   require('./creditScore'));
 router.use('/cashback',       require('./cashback'));
+router.use('/settings',       require('./settings'));
 
 module.exports = router;

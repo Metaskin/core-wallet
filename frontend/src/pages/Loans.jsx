@@ -58,13 +58,7 @@ export default function Loans() {
           {[0,1,2].map(i => <div key={i} className="h-48 rounded-xl shimmer" />)}
         </div>
       ) : loans.length === 0 ? (
-        <div className="bank-card flex flex-col items-center justify-center py-16 text-center animate-fade-up">
-          <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-            <BankIcon className="text-gray-400" />
-          </div>
-          <p className="text-gray-700 font-semibold text-sm">No active loans</p>
-          <p className="text-gray-400 text-xs mt-1">Loan accounts will appear here once added</p>
-        </div>
+        <EmptyLoans />
       ) : (
         <div className="space-y-4 animate-fade-up" style={{ animationDelay: '0.05s' }}>
           {loans.map(loan => {
@@ -296,6 +290,144 @@ function PaymentModal({ loan, onClose, onPaid }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function EmptyLoans() {
+  const [showCalc, setShowCalc] = useState(false);
+  const [calcForm, setCalcForm] = useState({ amount: '', rate: '', years: '' });
+
+  const monthly = (() => {
+    const P = parseFloat(calcForm.amount) || 0;
+    const r = (parseFloat(calcForm.rate)  || 0) / 100 / 12;
+    const n = (parseFloat(calcForm.years) || 0) * 12;
+    if (!P || !r || !n) return null;
+    return (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  })();
+
+  return (
+    <div className="space-y-4 animate-fade-up">
+      {/* Hero empty state */}
+      <div className="bank-card p-8 flex flex-col items-center text-center">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-50 to-[#EEF4FF] flex items-center justify-center mb-5 shadow-sm">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#003087" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="22" x2="21" y2="22"/>
+            <line x1="6" y1="18" x2="6" y2="11"/>
+            <line x1="10" y1="18" x2="10" y2="11"/>
+            <line x1="14" y1="18" x2="14" y2="11"/>
+            <line x1="18" y1="18" x2="18" y2="11"/>
+            <polygon points="12 2 20 7 4 7"/>
+          </svg>
+        </div>
+        <h2 className="text-gray-900 font-bold text-lg mb-2">No Active Loans</h2>
+        <p className="text-gray-500 text-sm max-w-xs leading-relaxed">
+          You don't have any active loans or mortgage accounts at this time. Explore competitive rates tailored to your profile.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-3 mt-6 w-full max-w-xs">
+          <a
+            href="mailto:loans@corewallet.com"
+            className="btn-primary flex-1 text-sm text-center"
+          >
+            Explore Loan Options
+          </a>
+          <button
+            onClick={() => setShowCalc(v => !v)}
+            className="btn-ghost flex-1 text-sm"
+          >
+            {showCalc ? 'Hide Calculator' : 'Mortgage Calculator'}
+          </button>
+        </div>
+      </div>
+
+      {/* Mortgage calculator */}
+      {showCalc && (
+        <div className="bank-card p-6 animate-fade-up">
+          <p className="text-gray-800 font-semibold text-sm mb-4 flex items-center gap-2">
+            <CalcIcon /> Mortgage Calculator
+          </p>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Loan Amount ($)</label>
+              <input
+                type="number" className="input-base text-sm"
+                placeholder="300000"
+                value={calcForm.amount}
+                onChange={e => setCalcForm(f => ({ ...f, amount: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Interest Rate (%)</label>
+              <input
+                type="number" step="0.01" className="input-base text-sm"
+                placeholder="6.875"
+                value={calcForm.rate}
+                onChange={e => setCalcForm(f => ({ ...f, rate: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Term (years)</label>
+              <input
+                type="number" className="input-base text-sm"
+                placeholder="30"
+                value={calcForm.years}
+                onChange={e => setCalcForm(f => ({ ...f, years: e.target.value }))}
+              />
+            </div>
+          </div>
+          {monthly !== null && (
+            <div className="bg-gradient-to-r from-blue-50 to-[#EEF4FF] rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-xs">Estimated Monthly Payment</p>
+                <p className="text-navy font-bold text-2xl amount-display">
+                  ${monthly.toFixed(2)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-gray-400 text-xs">Total Cost</p>
+                <p className="text-gray-700 font-semibold amount-display">
+                  ${(monthly * parseFloat(calcForm.years) * 12).toFixed(0)}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Loan type cards */}
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { icon: '🏠', label: 'Home Mortgage', desc: 'Fixed & adjustable rates', rate: 'from 6.5% APR' },
+          { icon: '🚗', label: 'Auto Loan',     desc: 'New & used vehicles',       rate: 'from 5.9% APR' },
+          { icon: '💼', label: 'Personal Loan', desc: 'Flexible use of funds',     rate: 'from 8.5% APR' },
+          { icon: '🎓', label: 'Student Loan',  desc: 'Education financing',        rate: 'from 4.5% APR' },
+        ].map(({ icon, label, desc, rate }) => (
+          <div key={label} className="bank-card p-4 cursor-pointer hover:shadow-md transition-shadow">
+            <div className="text-2xl mb-2">{icon}</div>
+            <p className="text-gray-800 font-semibold text-sm">{label}</p>
+            <p className="text-gray-400 text-xs mt-0.5">{desc}</p>
+            <p className="text-bank-green text-xs font-medium mt-2">{rate}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CalcIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <rect x="4" y="2" width="16" height="20" rx="2"/>
+      <line x1="8" y1="6" x2="16" y2="6"/>
+      <line x1="8" y1="10" x2="8" y2="10" strokeWidth="3" strokeLinecap="round"/>
+      <line x1="12" y1="10" x2="12" y2="10" strokeWidth="3" strokeLinecap="round"/>
+      <line x1="16" y1="10" x2="16" y2="10" strokeWidth="3" strokeLinecap="round"/>
+      <line x1="8" y1="14" x2="8" y2="14" strokeWidth="3" strokeLinecap="round"/>
+      <line x1="12" y1="14" x2="12" y2="14" strokeWidth="3" strokeLinecap="round"/>
+      <line x1="16" y1="14" x2="16" y2="14" strokeWidth="3" strokeLinecap="round"/>
+      <line x1="8" y1="18" x2="12" y2="18" strokeWidth="3" strokeLinecap="round"/>
+      <line x1="16" y1="18" x2="16" y2="18" strokeWidth="3" strokeLinecap="round"/>
+    </svg>
   );
 }
 

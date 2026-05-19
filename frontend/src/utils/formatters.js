@@ -1,14 +1,27 @@
-export const formatCurrency = (amount, currency = 'USD') =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount);
+export const formatCurrency = (amount, currency = 'USD') => {
+  const n = parseFloat(amount);
+  if (isNaN(n) || amount === null || amount === undefined) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 2 }).format(0);
+  }
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 2 }).format(n);
+};
 
-export const formatDate = (date) =>
-  new Intl.DateTimeFormat('en-US', {
+export const formatDate = (date) => {
+  if (!date) return '—';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
-  }).format(new Date(date));
+  }).format(d);
+};
 
-export const formatDateShort = (date) =>
-  new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(date));
+export const formatDateShort = (date) => {
+  if (!date) return '—';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(d);
+};
 
 export const getInitials = (name = '') =>
   name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();

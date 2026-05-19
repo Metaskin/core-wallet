@@ -19,10 +19,11 @@ const getCreditScore = async (userId) => {
   const monthlyChange = previous ? currentScore - parseInt(previous.score) : 0;
 
   const insights = {
-    utilizationScore:    current.utilization_score    ?? null,
-    paymentHistoryScore: current.payment_history_score ?? null,
-    creditAgeScore:      current.credit_age_score      ?? null,
-    overallRating:       getOverallRating(currentScore),
+    utilizationPct:    parseFloat(current.utilization_pct)     || 0,
+    paymentHistoryPct: parseFloat(current.payment_history_pct) || 0,
+    creditAgeYears:    parseFloat(current.credit_age_years)    || 0,
+    hardInquiries:     parseInt(current.hard_inquiries)        || 0,
+    overallRating:     getOverallRating(currentScore),
   };
 
   return {

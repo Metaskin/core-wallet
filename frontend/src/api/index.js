@@ -159,3 +159,14 @@ export const cardReplacementAPI = {
   requestReplacement: (cardId, data) => client.post(`/cards/${cardId}/replace`, data),
   getStatus:          (cardId)       => client.get(`/cards/${cardId}/replacement`),
 };
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+export const settingsAPI = {
+  getProfile:             ()     => client.get('/settings/profile'),
+  updateProfile:          (data) => client.patch('/settings/profile', data),
+  getNotifPrefs:          ()     => client.get('/settings/notifications'),
+  updateNotifPrefs:       (data) => client.patch('/settings/notifications', data),
+  getSecuritySettings:    ()     => client.get('/settings/security'),
+  updateSecuritySettings: (data) => client.patch('/settings/security', data),
+  getSessions:            ()     => client.get('/settings/sessions'),
+};

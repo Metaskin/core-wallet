@@ -36,6 +36,7 @@ function inferTxType(desc, type) {
   const lower = (desc || '').toLowerCase();
   if (type === 'credit') {
     if (DIRECT_DEPOSIT_PATTERNS.some(p => lower.includes(p))) return 'Direct Deposit';
+    if (lower.includes('wire'))                                return 'Wire Transfer';
     if (REFUND_PATTERNS.some(p => lower.includes(p)))         return 'Refund';
     return 'ACH Credit';
   }

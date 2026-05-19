@@ -88,6 +88,7 @@ const runMigrations = async () => {
   await runMigration('004_notifications.sql');
   await runMigration('005_checking_savings.sql');
   await runMigration('008_banking_services.sql');
+  await runMigration('009_fixes_and_settings.sql');
 
   // Phase 3: column patches outside migration transactions
   const client = await pool.connect();
