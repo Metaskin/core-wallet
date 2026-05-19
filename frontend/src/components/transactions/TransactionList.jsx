@@ -1,7 +1,6 @@
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { getDisplayName } from '../../utils/merchantDisplay';
+import { classifyTransaction } from '../../utils/merchantDisplay';
 
-// Status → badge style
 const STATUS_STYLES = {
   completed: 'bg-emerald-50 text-bank-green border-emerald-200',
   pending:   'bg-amber-50 text-bank-amber border-amber-200',
@@ -34,10 +33,11 @@ export default function TransactionList({ transactions = [], loading = false, ac
   return (
     <div className="divide-y divide-gray-50">
       {transactions.map((tx, i) => {
-        const incoming  = isCredit(tx, accountNumber);
-        const amount    = parseFloat(tx.amount);
-        const failed    = tx.status === 'failed';
+        const incoming = isIncoming(tx, accountNumber);
+        const amount   = parseFloat(tx.amount);
+        const failed   = tx.status === 'failed';
         const clickable = !!onSelect;
+        const { merchantName, txType, subDetail } = classifyTransaction(tx);
 
         return (
           <div
@@ -53,27 +53,24 @@ export default function TransactionList({ transactions = [], loading = false, ac
           >
             {/* Icon bubble */}
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-              failed    ? 'bg-red-50'     :
-              incoming  ? 'bg-emerald-50' : 'bg-blue-50'
+              failed   ? 'bg-red-50'     :
+              incoming ? 'bg-emerald-50' : 'bg-blue-50'
             }`}>
-              {failed
-                ? <FailIcon />
-                : incoming
-                  ? <ArrowDownIcon />
-                  : <ArrowUpIcon />}
+              {failed   ? <FailIcon />      :
+               incoming ? <ArrowDownIcon /> : <ArrowUpIcon />}
             </div>
 
-            {/* Info */}
+            {/* Left: merchant + type + date */}
             <div className="flex-1 min-w-0">
               <p className={`text-sm font-medium truncate ${failed ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                {getCounterparty(tx, accountNumber)}
+                {merchantName}
               </p>
-              <p className="text-gray-400 text-xs mt-0.5">
-                {formatDate(tx.createdAt)}
+              <p className="text-gray-400 text-xs mt-0.5 truncate">
+                {subDetail ? `${subDetail} · ` : ''}{txType} · {formatDate(tx.createdAt)}
               </p>
             </div>
 
-            {/* Amount + status */}
+            {/* Right: amount + status */}
             <div className="text-right shrink-0">
               <p className={`amount-display font-semibold text-sm ${
                 failed   ? 'text-gray-400 line-through' :
@@ -99,22 +96,10 @@ export default function TransactionList({ transactions = [], loading = false, ac
   );
 }
 
-function isCredit(tx, accountNumber) {
+function isIncoming(tx, accountNumber) {
   if (tx.type === 'credit') return true;
   if (tx.type === 'debit')  return false;
   return tx.receiver?.accountNumber === accountNumber;
-}
-
-function getCounterparty(tx, accountNumber) {
-  const credit = isCredit(tx, accountNumber);
-  const extRef = tx.externalReference || tx.external_reference;
-
-  if (extRef) {
-    const name = getDisplayName(tx) || extRef;
-    return credit ? `From ${name}` : `To ${name}`;
-  }
-  if (credit) return `From ${tx.fromName || '—'}`;
-  return `To ${tx.toName || '—'}`;
 }
 
 function ArrowDownIcon() {

@@ -1,6 +1,5 @@
-// Expected transaction direction for each category.
-// 'credit' = money coming IN to the account holder.
-// 'debit'  = money going OUT from the account holder.
+// ─── Legacy helpers (kept for any existing imports) ──────────────────────────
+
 const CATEGORY_DIRECTION = {
   SEA_DRILL_INTL:   'credit',
   PEER_TRANSFER:    'credit',
@@ -10,42 +9,112 @@ const CATEGORY_DIRECTION = {
   AUTO_FINANCE:     'debit',
 };
 
-const DEV_MERCHANT_MAP = {
-  SEA_DRILL_INTL:   ['SEA DRILL-INTL'],
-  RETAIL_STORE:     ['Walmart', 'Target'],
-  FOOD_OUTLET:      ['KFC'],
-  UTILITY_PROVIDER: ['Power Company'],
-  AUTO_FINANCE:     ['Auto Finance'],
-  PEER_TRANSFER:    ['Sarah K.', 'John Fields', 'Mike Osborne'],
-};
+export function getExpectedDirection(ref) {
+  return CATEGORY_DIRECTION[ref] || null;
+}
 
-/**
- * Returns a human-readable display name for the external counterparty.
- *
- * Dev:  maps category keys to realistic names with random selection.
- * Prod: returns the raw external_reference — no brand names, no fake data.
- *
- * Returns null when there is no external_reference so callers can fall
- * back to tx.fromName / tx.toName without showing empty strings.
- */
 export function getDisplayName(tx) {
   const ref = tx.externalReference || tx.external_reference;
-  if (!ref) return null;
+  if (!ref || ref === 'System') return null;
+  return ref;
+}
 
-  if (!import.meta.env.DEV) {
-    return ref;
+// ─── Transaction classification ───────────────────────────────────────────────
+
+const BILL_PATTERNS = [
+  'insurance', 'electric service', 'gas of ohio', 'internet', 'heating',
+  'monthly subscription', 'monthly service', 'monthly membership',
+  'hulu', 'spotify', 'disney+', 'netflix', 'youtube premium',
+  'amazon prime', 'apple icloud', 'spectrum',
+];
+
+const DIRECT_DEPOSIT_PATTERNS = ['payroll', 'direct deposit', 'salary', 'wages'];
+const REFUND_PATTERNS          = ['refund', 'reimbursement', 'fsa reimbursement'];
+
+function inferTxType(desc, type) {
+  if (type === 'transfer') return 'Internal Transfer';
+  const lower = (desc || '').toLowerCase();
+  if (type === 'credit') {
+    if (DIRECT_DEPOSIT_PATTERNS.some(p => lower.includes(p))) return 'Direct Deposit';
+    if (REFUND_PATTERNS.some(p => lower.includes(p)))         return 'Refund';
+    return 'ACH Credit';
+  }
+  if (lower.includes('atm'))  return 'ATM Withdrawal';
+  if (lower.includes('wire')) return 'Wire Transfer';
+  if (BILL_PATTERNS.some(p => lower.includes(p)))             return 'Bill Payment';
+  return 'Card Purchase';
+}
+
+function parseMerchantAndDetail(desc, type) {
+  if (!desc) return { merchantName: null, subDetail: null };
+
+  // "Transfer to/from X"
+  const xfer = desc.match(/^Transfer (?:to|from) (.+)$/i);
+  if (xfer) return { merchantName: xfer[1].trim(), subDetail: null };
+
+  // "Entity — Detail"  (U+2014 em dash with surrounding spaces)
+  const sep = desc.indexOf(' — ');
+  if (sep !== -1) {
+    const first  = desc.slice(0, sep).trim();
+    const second = desc.slice(sep + 3).trim();
+    // "Payroll — Company" → company is the merchant
+    if (first.toLowerCase() === 'payroll') return { merchantName: second, subDetail: null };
+    return { merchantName: first, subDetail: second };
   }
 
-  const options = DEV_MERCHANT_MAP[ref];
-  if (!options) return ref;
+  // Fallback: use entire description as merchant
+  return { merchantName: desc.trim(), subDetail: null };
+}
 
-  return options[Math.floor(Math.random() * options.length)];
+function cleanBackendName(name) {
+  if (!name || name === 'System') return null;
+  return name
+    .replace(/_(INTL|FAILED|INT|EXT)$/i, '')
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .trim() || null;
 }
 
 /**
- * Returns the expected transaction direction for a given external_reference key.
- * Useful for validation and seeding; does not override tx.type at render time.
+ * Derives structured display info from a transaction object.
+ *
+ * Returns:
+ *   merchantName  — clean merchant / counterparty name (title case, no raw keys)
+ *   txType        — banking classification (Card Purchase, Direct Deposit, …)
+ *   subDetail     — optional secondary detail (category, memo, location)
  */
-export function getExpectedDirection(ref) {
-  return CATEGORY_DIRECTION[ref] || null;
+export function classifyTransaction(tx) {
+  const desc = tx.description || '';
+  const type = tx.type        || 'debit';
+
+  const { merchantName: fromDesc, subDetail } = parseMerchantAndDetail(desc, type);
+
+  let merchantName = fromDesc;
+
+  if (!merchantName) {
+    const raw = type === 'credit'
+      ? (tx.fromName || tx.externalReference || tx.external_reference)
+      : (tx.toName   || tx.externalReference || tx.external_reference);
+    merchantName = cleanBackendName(raw);
+  }
+
+  return {
+    merchantName: merchantName || 'Unknown',
+    txType:       inferTxType(desc, type),
+    subDetail:    subDetail || null,
+  };
+}
+
+// Kept for backward compatibility — prefer classifyTransaction()
+export function labelFromDescription(description) {
+  if (!description) return null;
+  const xfer = description.match(/^Transfer (?:to|from) (.+)$/i);
+  if (xfer) return xfer[1].trim();
+  const sep = description.indexOf(' — ');
+  if (sep === -1) return description;
+  const first  = description.slice(0, sep).trim();
+  const second = description.slice(sep + 3).trim();
+  if (first.toLowerCase() === 'payroll') return second;
+  return first;
 }
