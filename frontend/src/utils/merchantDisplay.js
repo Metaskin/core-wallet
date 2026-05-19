@@ -45,6 +45,10 @@ function inferTxType(desc, type) {
   return 'Card Purchase';
 }
 
+// When these appear before " — " they are transaction-type labels, not merchant names.
+// The counterparty/location after the dash is the real merchant display name.
+const TX_TYPE_PREFIXES = new Set(['payroll', 'atm withdrawal', 'wire transfer']);
+
 function parseMerchantAndDetail(desc, type) {
   if (!desc) return { merchantName: null, subDetail: null };
 
@@ -57,8 +61,8 @@ function parseMerchantAndDetail(desc, type) {
   if (sep !== -1) {
     const first  = desc.slice(0, sep).trim();
     const second = desc.slice(sep + 3).trim();
-    // "Payroll — Company" → company is the merchant
-    if (first.toLowerCase() === 'payroll') return { merchantName: second, subDetail: null };
+    // "Payroll — Company" or "ATM Withdrawal — Bank Location" → second part is the name
+    if (TX_TYPE_PREFIXES.has(first.toLowerCase())) return { merchantName: second, subDetail: null };
     return { merchantName: first, subDetail: second };
   }
 
