@@ -16,6 +16,8 @@ router.post('/',  validate(validators.issueCard), controller.issueCard);
 router.post('/:id/details',         revealLimiter, controller.getSecureDetails);
 router.post('/:id/secure-details',  revealLimiter, controller.getSecureDetails);
 
-router.patch('/:id/freeze', controller.toggleFreeze);
+router.patch('/:id/freeze',       controller.toggleFreeze);
+router.post('/:id/replace',       controller.requestReplacement);
+router.get('/:id/replacement',    controller.getReplacement);
 
 module.exports = router;

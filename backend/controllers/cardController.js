@@ -2,6 +2,8 @@ const cardService     = require('../services/cardService');
 const securityService = require('../services/securityService');
 const asyncHandler    = require('../utils/asyncHandler');
 const AppError        = require('../utils/AppError');
+const { pool }        = require('../config/database');
+const { notify }      = require('../services/notificationService');
 
 const issueCard = asyncHandler(async (req, res) => {
   if (!req.account) throw new AppError('Account not found', 404);
@@ -69,4 +71,77 @@ const toggleFreeze = asyncHandler(async (req, res) => {
   res.json({ status: 'success', data: { card } });
 });
 
-module.exports = { issueCard, getMyCards, getSecureDetails, toggleFreeze };
+const requestReplacement = asyncHandler(async (req, res) => {
+  if (!req.account) throw new AppError('Account not found', 404);
+
+  const { reason } = req.body;
+
+  // Find the card and verify it belongs to an account owned by this user
+  const { rows: cardRows } = await pool.query(
+    `SELECT c.* FROM cards c
+     JOIN accounts a ON a.id = c.account_id
+     WHERE c.id = $1 AND a.user_id = $2`,
+    [req.params.id, req.user.id]
+  );
+  if (!cardRows.length) throw new AppError('Card not found', 404);
+  const card = cardRows[0];
+
+  // If a replacement is already in progress (not 'none' or 'delivered')
+  const blockedStatuses = ['requested', 'approved', 'printing', 'shipped'];
+  if (blockedStatuses.includes(card.replacement_status)) {
+    throw new AppError('A replacement is already in progress', 409);
+  }
+
+  const { rows: updatedRows } = await pool.query(
+    `UPDATE cards
+     SET replacement_status       = 'requested',
+         replacement_requested_at = NOW(),
+         updated_at               = NOW()
+     WHERE id = $1
+     RETURNING *`,
+    [card.id]
+  );
+  const updatedCard = updatedRows[0];
+
+  notify({
+    userId:   req.user.id,
+    type:     'card_replacement_requested',
+    title:    'Card replacement requested',
+    message:  `A replacement for your card ending in ${card.last_four || card.card_number_last4 || '****'} has been requested${reason ? ` (${reason})` : ''}.`,
+    severity: 'info',
+    metadata: { cardId: card.id, reason: reason || null },
+  });
+
+  res.status(200).json({ status: 'success', data: { card: updatedCard } });
+});
+
+const getReplacement = asyncHandler(async (req, res) => {
+  if (!req.account) throw new AppError('Account not found', 404);
+
+  const { rows: cardRows } = await pool.query(
+    `SELECT c.* FROM cards c
+     JOIN accounts a ON a.id = c.account_id
+     WHERE c.id = $1 AND a.user_id = $2`,
+    [req.params.id, req.user.id]
+  );
+  if (!cardRows.length) throw new AppError('Card not found', 404);
+  const card = cardRows[0];
+
+  let expectedDelivery = null;
+  if (card.replacement_requested_at) {
+    const delivery = new Date(card.replacement_requested_at);
+    delivery.setDate(delivery.getDate() + 5);
+    expectedDelivery = delivery.toISOString();
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data:   {
+      replacementStatus:      card.replacement_status      || 'none',
+      replacementRequestedAt: card.replacement_requested_at || null,
+      expectedDelivery,
+    },
+  });
+});
+
+module.exports = { issueCard, getMyCards, getSecureDetails, toggleFreeze, requestReplacement, getReplacement };

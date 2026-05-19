@@ -78,3 +78,84 @@ export const adminAPI = {
   toggleStatus: (accId)   => client.patch(`/admin/accounts/${accId}/toggle-status`),
   getTransactions: (page = 1) => client.get(`/admin/transactions?page=${page}`),
 };
+
+// ─── Autopay ──────────────────────────────────────────────────────────────────
+export const autopayAPI = {
+  getAll:  ()         => client.get('/autopay'),
+  create:  (data)     => client.post('/autopay', data),
+  update:  (id, data) => client.patch(`/autopay/${id}`, data),
+  delete:  (id)       => client.delete(`/autopay/${id}`),
+};
+
+// ─── Loans ────────────────────────────────────────────────────────────────────
+export const loanAPI = {
+  getAll:      ()          => client.get('/loans'),
+  getOne:      (id)        => client.get(`/loans/${id}`),
+  makePayment: (id, data)  => client.post(`/loans/${id}/payment`, data),
+};
+
+// ─── Investments ──────────────────────────────────────────────────────────────
+export const investmentAPI = {
+  getOverview:     ()     => client.get('/investments'),
+  transfer:        (data) => client.post('/investments/transfer', data),
+  getTransactions: ()     => client.get('/investments/transactions'),
+};
+
+// ─── Beneficiaries ────────────────────────────────────────────────────────────
+export const beneficiaryAPI = {
+  getAll:  ()         => client.get('/beneficiaries'),
+  create:  (data)     => client.post('/beneficiaries', data),
+  update:  (id, data) => client.patch(`/beneficiaries/${id}`, data),
+  delete:  (id)       => client.delete(`/beneficiaries/${id}`),
+};
+
+// ─── Travel Notices ───────────────────────────────────────────────────────────
+export const travelNoticeAPI = {
+  getAll:  ()         => client.get('/travel-notices'),
+  create:  (data)     => client.post('/travel-notices', data),
+  update:  (id, data) => client.patch(`/travel-notices/${id}`, data),
+  cancel:  (id)       => client.delete(`/travel-notices/${id}`),
+};
+
+// ─── Check Deposits ───────────────────────────────────────────────────────────
+export const checkDepositAPI = {
+  getAll:  ()     => client.get('/check-deposits'),
+  submit:  (data) => client.post('/check-deposits', data),
+  getOne:  (id)   => client.get(`/check-deposits/${id}`),
+};
+
+// ─── Wire Transfers ───────────────────────────────────────────────────────────
+export const wireTransferAPI = {
+  getAll:   ()     => client.get('/wire-transfers'),
+  initiate: (data) => client.post('/wire-transfers', data),
+  getOne:   (id)   => client.get(`/wire-transfers/${id}`),
+  cancel:   (id)   => client.patch(`/wire-transfers/${id}/cancel`),
+};
+
+// ─── Bill Pay ─────────────────────────────────────────────────────────────────
+export const billPayAPI = {
+  getBillers:      ()         => client.get('/bill-pay/billers'),
+  addBiller:       (data)     => client.post('/bill-pay/billers', data),
+  removeBiller:    (id)       => client.delete(`/bill-pay/billers/${id}`),
+  getPayments:     ()         => client.get('/bill-pay/payments'),
+  schedulePayment: (data)     => client.post('/bill-pay/payments', data),
+  cancelPayment:   (id)       => client.delete(`/bill-pay/payments/${id}`),
+};
+
+// ─── Credit Score ─────────────────────────────────────────────────────────────
+export const creditScoreAPI = {
+  getScore: () => client.get('/credit-score'),
+};
+
+// ─── Cashback ─────────────────────────────────────────────────────────────────
+export const cashbackAPI = {
+  getOverview:     ()     => client.get('/cashback'),
+  getTransactions: ()     => client.get('/cashback/transactions'),
+  redeem:          (data) => client.post('/cashback/redeem', data),
+};
+
+// ─── Card Replacement ─────────────────────────────────────────────────────────
+export const cardReplacementAPI = {
+  requestReplacement: (cardId, data) => client.post(`/cards/${cardId}/replace`, data),
+  getStatus:          (cardId)       => client.get(`/cards/${cardId}/replacement`),
+};

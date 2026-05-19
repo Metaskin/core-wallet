@@ -29,7 +29,7 @@ app.use(cors({
   origin:  process.env.CLIENT_ORIGIN || '*',
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
 }));
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(limiter);
 
@@ -86,6 +86,8 @@ const runMigrations = async () => {
   await runMigration('002_fix_email_case.sql');
   await runMigration('003_fix_cvv_hash.sql');
   await runMigration('004_notifications.sql');
+  await runMigration('005_checking_savings.sql');
+  await runMigration('008_banking_services.sql');
 
   // Phase 3: column patches outside migration transactions
   const client = await pool.connect();
