@@ -1,5 +1,5 @@
 {
-  "appId": "com.mctbank.app",
+  "appId": "online.mctbank.mobile",
   "appName": "MCT Bank",
   "webDir": "dist",
   "bundledWebRuntime": false,
@@ -38,7 +38,11 @@
       "resizeOnFullScreen": true
     },
     "PushNotifications": {
-      "presentationOptions": ["badge", "sound", "alert"]
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
     }
   }
 }

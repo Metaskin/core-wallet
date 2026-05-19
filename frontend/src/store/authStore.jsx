@@ -55,7 +55,15 @@ export const AuthProvider = ({ children }) => {
     console.log('[Auth] login() called — payload:', { email, password: '***' });
     const response = await authAPI.login({ email, password });
     const body = response.data;
-    if (!body || !body.data) throw new Error('Unexpected server response. Please try again.');
+    if (!body || !body.data) {
+      console.error(
+        '[Auth] login: unexpected response body.',
+        '| type:', typeof body,
+        '| preview:', typeof body === 'string' ? body.slice(0, 200) : JSON.stringify(body),
+        '| API base:', import.meta.env.VITE_API_URL || '/api — VITE_API_URL not set'
+      );
+      throw new Error('Unexpected server response. Please try again.');
+    }
 
     if (body.data.requiresOtp) {
       return { requiresOtp: true, userId: body.data.userId };

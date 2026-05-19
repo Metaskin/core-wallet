@@ -22,12 +22,30 @@ app.set('trust proxy', 1);
 // ─── Security & Parsing ───────────────────────────────────────────────────────
 app.use(helmet());
 
-if (!process.env.CLIENT_ORIGIN && process.env.NODE_ENV === 'production') {
-  console.warn('[CORS] WARNING: CLIENT_ORIGIN is not set — all origins are allowed. Set it to your Vercel URL.');
+// CLIENT_ORIGIN accepts a comma-separated list of allowed origins, e.g.:
+//   https://mctbank.online,https://www.mctbank.online,capacitor://localhost,ionic://localhost
+// When unset in development, all origins are allowed.
+const _allowedOrigins = (process.env.CLIENT_ORIGIN || '')
+  .split(',').map(o => o.trim()).filter(Boolean);
+
+if (!_allowedOrigins.length && process.env.NODE_ENV === 'production') {
+  console.warn('[CORS] WARNING: CLIENT_ORIGIN is not set — all origins are allowed. Set it to your frontend domains.');
+} else if (_allowedOrigins.length) {
+  console.log('[CORS] allowed origins:', _allowedOrigins.join(', '));
 }
+
 app.use(cors({
-  origin:  process.env.CLIENT_ORIGIN || '*',
+  origin: (origin, cb) => {
+    // Allow requests with no Origin header (Postman, curl, server-to-server, some native apps).
+    if (!origin) return cb(null, true);
+    // No whitelist configured → allow all (development mode).
+    if (!_allowedOrigins.length) return cb(null, true);
+    if (_allowedOrigins.includes(origin)) return cb(null, true);
+    console.warn(`[CORS] blocked origin: "${origin}"`);
+    cb(new Error(`CORS: origin "${origin}" is not allowed`));
+  },
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));

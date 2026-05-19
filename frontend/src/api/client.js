@@ -11,10 +11,25 @@ function clearToken() {
   sessionStorage.removeItem(TOKEN_KEY);
 }
 
-// In development, VITE_API_URL is unset and Vite's proxy forwards /api → localhost:5001.
-// In production (Vercel), set VITE_API_URL=https://<your-render-backend>.onrender.com/api in Vercel env vars.
+// VITE_API_URL must be baked in at build time via .env.production for:
+//   • Capacitor builds (Android / iOS) — relative /api resolves to https://localhost/api
+//     (Capacitor's built-in dev server), which returns index.html, not the backend
+//   • Vercel deployments without an /api rewrite rule in vercel.json
+const _apiBase = import.meta.env.VITE_API_URL || '/api';
+const _isCapacitor = typeof window !== 'undefined' && !!(window.Capacitor);
+
+if (_isCapacitor && !import.meta.env.VITE_API_URL) {
+  console.error(
+    '[API] Capacitor WebView detected but VITE_API_URL is not set.\n' +
+    'All /api calls will resolve to https://localhost/api (Capacitor local server) and return HTML.\n' +
+    'Fix: add VITE_API_URL=https://YOUR-RENDER-APP.onrender.com/api to frontend/.env.production\n' +
+    'then rebuild: npm run build && npx cap sync android'
+  );
+}
+console.log(`[API] base="${_apiBase}" capacitor=${_isCapacitor} mode=${import.meta.env.MODE}`);
+
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: _apiBase,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
