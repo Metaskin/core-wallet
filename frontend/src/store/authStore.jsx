@@ -52,17 +52,38 @@ export const AuthProvider = ({ children }) => {
   }, [setSession]);
 
   const login = useCallback(async (email, password, rememberMe = true) => {
-    console.log('[Auth] login() called — payload:', { email, password: '***' });
-    const response = await authAPI.login({ email, password });
+    console.log('[Auth] login() called — API base:', import.meta.env.VITE_API_URL || '/api (fallback)');
+
+    let response;
+    try {
+      response = await authAPI.login({ email, password });
+    } catch (err) {
+      const status = err.response?.status;
+      const serverMsg = err.response?.data?.message;
+      console.error('[Auth] login request failed — status:', status, '| msg:', serverMsg, '| err:', err.message);
+
+      if (!err.response) {
+        // Network-level failure: no internet, CORS block, server down
+        throw new Error('Unable to reach the server. Check your internet connection and try again.');
+      }
+      if (status === 401) throw new Error(serverMsg || 'Incorrect email or password.');
+      if (status === 429) throw new Error('Too many login attempts. Please wait a moment and try again.');
+      if (status === 404) throw new Error('Authentication service not found. Please contact support.');
+      if (status >= 500)  throw new Error('Server temporarily unavailable. Please try again in a moment.');
+      throw new Error(serverMsg || 'Login failed. Please try again.');
+    }
+
     const body = response.data;
     if (!body || !body.data) {
+      const apiBase = import.meta.env.VITE_API_URL || '/api';
       console.error(
         '[Auth] login: unexpected response body.',
         '| type:', typeof body,
         '| preview:', typeof body === 'string' ? body.slice(0, 200) : JSON.stringify(body),
-        '| API base:', import.meta.env.VITE_API_URL || '/api — VITE_API_URL not set'
+        '| API base:', apiBase
       );
-      throw new Error('Unexpected server response. Please try again.');
+      // Body is likely HTML — VITE_API_URL missing /api or pointing at wrong URL
+      throw new Error('Authentication service returned an unexpected response. Please try again.');
     }
 
     if (body.data.requiresOtp) {

@@ -23,7 +23,9 @@ app.set('trust proxy', 1);
 app.use(helmet());
 
 // CLIENT_ORIGIN accepts a comma-separated list of allowed origins, e.g.:
-//   https://mctbank.online,https://www.mctbank.online,capacitor://localhost,ionic://localhost
+//   https://mctbank.online,https://www.mctbank.online,http://localhost,http://localhost:5173
+// Capacitor Android (androidScheme:"http") sends Origin: http://localhost — include that.
+// DO NOT include https://localhost — Capacitor is configured to use http scheme.
 // When unset in development, all origins are allowed.
 const _allowedOrigins = (process.env.CLIENT_ORIGIN || '')
   .split(',').map(o => o.trim()).filter(Boolean);
