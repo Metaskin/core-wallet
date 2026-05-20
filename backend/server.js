@@ -1,6 +1,11 @@
-// override: true forces .env values to win over any pre-existing system environment
-// variables of the same name (e.g. NODE_ENV, PORT set globally on Windows).
-require('dotenv').config({ path: require('path').join(__dirname, '.env'), override: true });
+// Load .env in development only.
+// In production (Render) environment variables are injected natively — dotenv is
+// a no-op because .env is gitignored and never deployed.
+// IMPORTANT: do NOT use override:true in production — if .env ever appeared on
+// the Render disk it would overwrite Render's correct env vars (e.g. RESEND_API_KEY)
+// with whatever stale values are in the file.
+const _dotenvPath = require('path').join(__dirname, '.env');
+require('dotenv').config({ path: _dotenvPath });
 
 const express      = require('express');
 const cors         = require('cors');
@@ -54,8 +59,21 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(limiter);
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.get('/',       (req, res) => res.json({ status: 'success', message: 'CoreWallet API v2.0' }));
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/',       (req, res) => res.json({ status: 'success', message: 'MCT Bank API v2.0' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', env: process.env.NODE_ENV }));
+
+// Email health check — tests Resend connectivity and domain verification.
+// Returns 200 if email will deliver, 503 if something is misconfigured.
+app.get('/health/email', async (req, res) => {
+  try {
+    const { checkEmailHealth } = require('./utils/email');
+    const result = await checkEmailHealth();
+    res.status(result.ok ? 200 : 503).json({ status: result.ok ? 'ok' : 'error', ...result });
+  } catch (err) {
+    res.status(500).json({ status: 'error', error: err.message });
+  }
+});
+
 app.use('/api', require('./routes/index'));
 
 // ─── 404 ─────────────────────────────────────────────────────────────────────
@@ -151,6 +169,15 @@ const start = async () => {
 
   await testConnection();
   await runMigrations();
+
+  // Validate email service — logs key preview, domain status, and sender address.
+  // Does NOT block startup; email failure never kills the server.
+  try {
+    const { validateEmailService } = require('./utils/email');
+    await validateEmailService();
+  } catch (err) {
+    console.error('[Email] Startup validation threw unexpectedly:', err.message);
+  }
 
   // ── Startup diagnostic ─────────────────────────────────────────────────────
   // Runs after migrations. Proves which database the backend is actually
