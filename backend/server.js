@@ -2,7 +2,7 @@
 // In production (Render) environment variables are injected natively — dotenv is
 // a no-op because .env is gitignored and never deployed.
 // IMPORTANT: do NOT use override:true in production — if .env ever appeared on
-// the Render disk it would overwrite Render's correct env vars (e.g. RESEND_API_KEY)
+// the Render disk it would overwrite Render's correct env vars (e.g. EMAILJS_PUBLIC_KEY)
 // with whatever stale values are in the file.
 const _dotenvPath = require('path').join(__dirname, '.env');
 require('dotenv').config({ path: _dotenvPath });

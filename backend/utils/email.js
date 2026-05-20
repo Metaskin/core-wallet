@@ -39,11 +39,14 @@ function getConfig() {
     publicKey:  process.env.EMAILJS_PUBLIC_KEY,
     privateKey: process.env.EMAILJS_PRIVATE_KEY || undefined,
     templates: {
-      otp:         process.env.EMAILJS_TEMPLATE_ID,
-      welcome:     process.env.EMAILJS_TEMPLATE_WELCOME      || process.env.EMAILJS_TEMPLATE_ID,
-      reset:       process.env.EMAILJS_TEMPLATE_RESET        || process.env.EMAILJS_TEMPLATE_ID,
-      transaction: process.env.EMAILJS_TEMPLATE_TRANSACTION  || process.env.EMAILJS_TEMPLATE_ID,
-      loginAlert:  process.env.EMAILJS_TEMPLATE_LOGIN_ALERT  || process.env.EMAILJS_TEMPLATE_ID,
+      // OTP uses the primary template — required.
+      otp: process.env.EMAILJS_TEMPLATE_ID,
+      // Other types need their own templates set via optional env vars.
+      // If not configured they are skipped (logged, never throw).
+      welcome:     process.env.EMAILJS_TEMPLATE_WELCOME      || null,
+      reset:       process.env.EMAILJS_TEMPLATE_RESET        || null,
+      transaction: process.env.EMAILJS_TEMPLATE_TRANSACTION  || null,
+      loginAlert:  process.env.EMAILJS_TEMPLATE_LOGIN_ALERT  || null,
     },
   };
 }
@@ -144,18 +147,18 @@ async function dispatch(templateId, templateParams) {
 }
 
 // ── 1. OTP / Login verification ───────────────────────────────────────────────
-// Dashboard template should include these variables:
-//   {{to_email}}   — recipient address  (set as "To Email" in template settings)
-//   {{to_name}}    — recipient's name
-//   {{otp_code}}   — 6-digit verification code
-//   {{expires_in}} — "10 minutes"
+// EmailJS template variables (must match placeholders in the dashboard template):
+//   {{to_email}} — recipient address (set as "To Email" in template settings)
+//   {{to_name}}  — recipient's name
+//   {{otp}}      — 6-digit verification code
+//   {{time}}     — expiry window e.g. "10 minutes"
 
 async function sendOtpEmail(to, code, name) {
   return dispatch(getConfig().templates.otp, {
-    to_email:   to,
-    to_name:    name || to,
-    otp_code:   code,
-    expires_in: '10 minutes',
+    to_email: to,
+    to_name:  name || to,
+    otp:      code,
+    time:     '10 minutes',
   });
 }
 
