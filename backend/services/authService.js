@@ -8,7 +8,7 @@ const otpRepo     = require('../repositories/otpRepository');
 const { withTransaction } = require('../config/database');
 const { JWT_SECRET, JWT_EXPIRES_IN, BCRYPT_ROUNDS, ACCOUNT } = require('../config/constants');
 const AppError = require('../utils/AppError');
-const { sendPasswordResetEmail, sendOtpEmail } = require('../utils/email');
+const { sendPasswordResetEmail, sendOtpEmail, sendWelcomeEmail } = require('../utils/email');
 const { notify } = require('./notificationService');
 
 const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
@@ -41,6 +41,14 @@ const register = async ({ email, password, fullName, avatarColor }) => {
   });
 
   const token = generateToken(result.user.id);
+
+  // Fire-and-forget — never await email in an auth flow.
+  sendWelcomeEmail(result.user.email, {
+    name:          result.user.full_name,
+    accountNumber: result.account.account_number,
+    routingNumber: result.account.routing_number,
+  }).catch(err => console.error('[Email] Welcome email failed:', err.message));
+
   return {
     user:     sanitizeUser(result.user),
     account:  sanitizeAccount(result.account),
