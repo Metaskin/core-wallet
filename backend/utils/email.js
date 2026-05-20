@@ -148,17 +148,17 @@ async function dispatch(templateId, templateParams) {
 
 // ── 1. OTP / Login verification ───────────────────────────────────────────────
 // EmailJS template variables (must match placeholders in the dashboard template):
-//   {{to_email}} — recipient address (set as "To Email" in template settings)
-//   {{to_name}}  — recipient's name
+//   {{to_email}} — recipient address — set the "To Email" field in the template to {{to_email}}
+//   {{to_name}}  — recipient's full name (falls back to email)
 //   {{otp}}      — 6-digit verification code
-//   {{time}}     — expiry window e.g. "10 minutes"
+//   {{time}}     — expiry window "15 minutes"
 
 async function sendOtpEmail(to, code, name) {
   return dispatch(getConfig().templates.otp, {
     to_email: to,
     to_name:  name || to,
     otp:      code,
-    time:     '10 minutes',
+    time:     '15 minutes',
   });
 }
 

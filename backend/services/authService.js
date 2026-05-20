@@ -115,7 +115,7 @@ const login = async ({ email, password }) => {
   // the TCP connection succeeds. Awaiting it blocks the HTTP response and causes
   // the browser to time out. The OTP is already stored in the DB — the user can
   // always get it from the server log above if email fails.
-  sendOtpEmail(user.email, rawCode)
+  sendOtpEmail(user.email, rawCode, user.full_name)
     .then(() => console.log(`[OTP] Email delivered → ${user.email}`))
     .catch(err => {
       console.error(`[OTP] Email delivery failed for ${user.email}: ${err.message}`);
