@@ -62,8 +62,8 @@ app.use(limiter);
 app.get('/',       (req, res) => res.json({ status: 'success', message: 'MCT Bank API v2.0' }));
 app.get('/health', (req, res) => res.json({ status: 'ok', env: process.env.NODE_ENV }));
 
-// Email health check — tests Resend connectivity and domain verification.
-// Returns 200 if email will deliver, 503 if something is misconfigured.
+// Email health check — validates EmailJS config (service ID, public key, template ID).
+// Returns 200 if config is complete, 503 if a required env var is missing.
 app.get('/health/email', async (req, res) => {
   try {
     const { checkEmailHealth } = require('./utils/email');
