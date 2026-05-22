@@ -10,12 +10,15 @@ import Cards             from './pages/Cards';
 import Transactions      from './pages/Transactions';
 import Analytics         from './pages/Analytics';
 import AdminUsers        from './pages/AdminUsers';
+import AdminTransactions from './pages/AdminTransactions';
 import Settings          from './pages/Settings';
 import Support           from './pages/Support';
 import SupportTicket     from './pages/SupportTicket';
 import Login             from './pages/Login';
 import Landing           from './pages/Landing';
 import LegalPage         from './pages/LegalPage';
+import About             from './pages/About';
+import Contact           from './pages/Contact';
 import Autopay           from './pages/Autopay';
 import Loans             from './pages/Loans';
 import Investments       from './pages/Investments';
@@ -59,6 +62,8 @@ function PublicShell() {
       <Route path="/"                element={<Landing />} />
       <Route path="/login"           element={<Login />} />
       <Route path="/register"        element={<Navigate to="/login?tab=register" replace />} />
+      <Route path="/about"           element={<About />} />
+      <Route path="/contact"         element={<Contact />} />
       <Route path="/status"          element={<LegalPage slug="status" />} />
       <Route path="/legal"           element={<LegalPage slug="legal" />} />
       <Route path="/licenses"        element={<LegalPage slug="licenses" />} />
@@ -275,6 +280,9 @@ function AuthenticatedShell({ user }) {
           <Route path="/credit-score"      element={<CreditScore />} />
           <Route path="/cashback"          element={<Cashback />} />
           <Route path="/card-services"     element={<CardServices />} />
+          {/* Public info pages */}
+          <Route path="/about"             element={<About />} />
+          <Route path="/contact"           element={<Contact />} />
           {/* Legal */}
           <Route path="/status"            element={<LegalPage slug="status" />} />
           <Route path="/legal"             element={<LegalPage slug="legal" />} />
@@ -285,7 +293,10 @@ function AuthenticatedShell({ user }) {
           <Route path="/security"          element={<LegalPage slug="security" />} />
           <Route path="/cookies"           element={<LegalPage slug="cookies" />} />
           {user.role === 'admin' && (
-            <Route path="/admin/users"     element={<AdminUsers />} />
+            <>
+              <Route path="/admin/users"        element={<AdminUsers />} />
+              <Route path="/admin/transactions" element={<AdminTransactions />} />
+            </>
           )}
           <Route path="*"                  element={<Navigate to="/" replace />} />
         </Routes>
@@ -319,7 +330,7 @@ function AppShell() {
   }
 
   const LEGAL = ['/status', '/legal', '/licenses', '/privacy', '/privacy-choices', '/terms', '/security', '/cookies'];
-  const PUBLIC = ['/', '/login', '/register', ...LEGAL];
+  const PUBLIC = ['/', '/login', '/register', '/about', '/contact', ...LEGAL];
 
   if (!user && !PUBLIC.includes(location.pathname)) return <Navigate to="/login" replace />;
   if (user && (location.pathname === '/login' || location.pathname === '/register')) return <Navigate to="/" replace />;

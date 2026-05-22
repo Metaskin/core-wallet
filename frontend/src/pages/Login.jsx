@@ -58,6 +58,17 @@ function Shell({ children }) {
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-4">
       <div className="w-full max-w-sm animate-fade-up">
+        {/* Anti-phishing trust indicator */}
+        <div className="flex items-center justify-center gap-1.5 mb-6">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
+          </svg>
+          <span className="text-emerald-400/80 text-[10px] font-medium tracking-wide">
+            mctbank.online · Verified Secure Connection
+          </span>
+        </div>
+
         <div className="flex flex-col items-center gap-2 mb-10">
           <svg width="44" height="44" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect width="40" height="40" rx="10" fill="#003087"/>
@@ -72,6 +83,16 @@ function Shell({ children }) {
           </div>
         </div>
         {children}
+
+        {/* Footer trust note */}
+        <p className="text-center text-white/20 text-[10px] mt-6 leading-relaxed px-2">
+          MCT Bank will never ask for your password by email or phone.
+          If you received an unsolicited request, do not click any links.
+          <br />
+          <a href="/security" className="text-white/30 hover:text-white/50 underline transition-colors">Security Center</a>
+          {' · '}
+          <a href="/contact" className="text-white/30 hover:text-white/50 underline transition-colors">Contact Support</a>
+        </p>
       </div>
     </div>
   );
@@ -91,20 +112,11 @@ function AuthView({ onForgot, initialTab, onOtpRequired }) {
     e.preventDefault();
     setLoading(true);
     try {
-      console.log('[Login] submitting — email:', loginForm.email);
       const result = await login(loginForm.email, loginForm.password, rememberMe);
-      console.log('[Login] login() resolved — result:', result);
-
       if (result?.requiresOtp) {
-        console.log('[Login] requiresOtp=true → transitioning to OTP screen, userId:', result.userId);
         onOtpRequired({ userId: result.userId, email: loginForm.email, rememberMe });
-      } else {
-        console.log('[Login] no OTP required — session set directly');
       }
     } catch (err) {
-      // Log the real error so the browser console always shows the root cause
-      console.error('[Login] login() threw:', err);
-      console.error('[Login] err.response:', err.response);
       const msg = err.response?.data?.message || err.message || 'Login failed — please try again';
       toast.error(msg);
     } finally {

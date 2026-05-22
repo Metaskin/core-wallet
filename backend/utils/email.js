@@ -195,8 +195,8 @@ async function sendWelcomeEmail(to, { name, accountNumber, routingNumber }) {
   return dispatch(getConfig().templates.welcome, {
     to_email:       to,
     to_name:        name ? name.split(' ')[0] : to,
-    account_last4:  accountNumber ? `••••${String(accountNumber).slice(-4)}` : '—',
-    routing_number: routingNumber || '026009593',
+    account_last4:  accountNumber ? String(accountNumber).slice(-4) : '—',
+    routing_number: routingNumber || '—',
   });
 }
 

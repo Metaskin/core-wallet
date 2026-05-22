@@ -52,18 +52,14 @@ export const AuthProvider = ({ children }) => {
   }, [setSession]);
 
   const login = useCallback(async (email, password, rememberMe = true) => {
-    console.log('[Auth] login() called — API base:', import.meta.env.VITE_API_URL || '/api (fallback)');
-
     let response;
     try {
       response = await authAPI.login({ email, password });
     } catch (err) {
       const status = err.response?.status;
       const serverMsg = err.response?.data?.message;
-      console.error('[Auth] login request failed — status:', status, '| msg:', serverMsg, '| err:', err.message);
 
       if (!err.response) {
-        // Network-level failure: no internet, CORS block, server down
         throw new Error('Unable to reach the server. Check your internet connection and try again.');
       }
       if (status === 401) throw new Error(serverMsg || 'Incorrect email or password.');
@@ -75,14 +71,6 @@ export const AuthProvider = ({ children }) => {
 
     const body = response.data;
     if (!body || !body.data) {
-      const apiBase = import.meta.env.VITE_API_URL || '/api';
-      console.error(
-        '[Auth] login: unexpected response body.',
-        '| type:', typeof body,
-        '| preview:', typeof body === 'string' ? body.slice(0, 200) : JSON.stringify(body),
-        '| API base:', apiBase
-      );
-      // Body is likely HTML — VITE_API_URL missing /api or pointing at wrong URL
       throw new Error('Authentication service returned an unexpected response. Please try again.');
     }
 

@@ -1,0 +1,33 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /contact
+Allow: /privacy
+Allow: /terms
+Allow: /security
+Allow: /cookies
+Allow: /legal
+Allow: /licenses
+
+# Disallow authenticated/private app routes
+Disallow: /dashboard
+Disallow: /cards
+Disallow: /transactions
+Disallow: /analytics
+Disallow: /settings
+Disallow: /support
+Disallow: /autopay
+Disallow: /loans
+Disallow: /investments
+Disallow: /beneficiaries
+Disallow: /travel-notice
+Disallow: /check-deposit
+Disallow: /wire-transfer
+Disallow: /bill-pay
+Disallow: /credit-score
+Disallow: /cashback
+Disallow: /card-services
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://mctbank.online/sitemap.xml

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MCT Bank — Android Network Security Config
+  - Forces all traffic to HTTPS (no cleartext allowed)
+  - Permits localhost cleartext only for Capacitor WebView (http://localhost scheme)
+  - Pins trust to system CA store (no user-installed CAs trusted for backend)
+-->
+<network-security-config>
+
+    <!-- Default: HTTPS only, no cleartext, system CAs only -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Capacitor WebView uses http://localhost internally — must allow cleartext -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- Production backend — HTTPS only, system CAs -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">core-wallet.onrender.com</domain>
+        <domain includeSubdomains="true">mctbank.online</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+</network-security-config>

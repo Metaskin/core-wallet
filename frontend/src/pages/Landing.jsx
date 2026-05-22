@@ -403,14 +403,14 @@ function MobileSection({ onOpen }) {
                 'Biometric login (Face ID / Fingerprint)',
                 'Mobile check deposit',
                 'Instant push notifications',
-                'Card freeze &amp; travel notice',
-                'Investment &amp; credit score monitoring',
+                'Card freeze & travel notice',
+                'Investment & credit score monitoring',
               ].map(item => (
                 <li key={item} className="flex items-center gap-3 text-gray-600 text-sm">
                   <span className="w-5 h-5 rounded-full bg-navy/10 flex items-center justify-center shrink-0">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#003087" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                   </span>
-                  <span dangerouslySetInnerHTML={{ __html: item }} />
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
@@ -618,11 +618,48 @@ function CtaSection({ onOpen, onSignIn }) {
 
 // ── Footer ────────────────────────────────────────────────────────────────────
 function SiteFooter({ onSignIn, onOpen }) {
+  const navigate = useNavigate();
   const cols = [
-    { title: 'Personal', links: ['Checking','Savings','Debit Cards','Personal Loans','Mobile App'] },
-    { title: 'Business', links: ['Business Checking','Payroll','Merchant Services','Business Credit','Treasury'] },
-    { title: 'Wealth',   links: ['Investment Advisory','Portfolio Management','Retirement Planning','Tax Services','Trust Services'] },
-    { title: 'Company',  links: ['About Us','Careers','Press','Investor Relations','Contact Us'] },
+    {
+      title: 'Personal',
+      links: [
+        { label: 'Checking',      href: '/login?tab=register' },
+        { label: 'Savings',       href: '/login?tab=register' },
+        { label: 'Debit Cards',   href: '/login?tab=register' },
+        { label: 'Personal Loans',href: '/login?tab=register' },
+        { label: 'Mobile App',    href: '/#mobile' },
+      ],
+    },
+    {
+      title: 'Business',
+      links: [
+        { label: 'Business Checking', href: '/login?tab=register' },
+        { label: 'Payroll',           href: '/login?tab=register' },
+        { label: 'Merchant Services', href: '/login?tab=register' },
+        { label: 'Business Credit',   href: '/login?tab=register' },
+        { label: 'Treasury',          href: '/login?tab=register' },
+      ],
+    },
+    {
+      title: 'Wealth',
+      links: [
+        { label: 'Investment Advisory',   href: '/login?tab=register' },
+        { label: 'Portfolio Management',  href: '/login?tab=register' },
+        { label: 'Retirement Planning',   href: '/login?tab=register' },
+        { label: 'Tax Services',          href: '/login?tab=register' },
+        { label: 'Trust Services',        href: '/login?tab=register' },
+      ],
+    },
+    {
+      title: 'Company',
+      links: [
+        { label: 'About Us',   href: '/about' },
+        { label: 'Contact Us', href: '/contact' },
+        { label: 'Security',   href: '/security' },
+        { label: 'Privacy',    href: '/privacy' },
+        { label: 'Terms',      href: '/terms' },
+      ],
+    },
   ];
   return (
     <footer className="bg-[#0a0c10] text-white py-16 px-5">
@@ -652,7 +689,11 @@ function SiteFooter({ onSignIn, onOpen }) {
               <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-4">{col.title}</p>
               <ul className="space-y-2.5">
                 {col.links.map(l => (
-                  <li key={l}><a href="#" className="text-white/35 hover:text-white/70 text-sm transition-colors">{l}</a></li>
+                  <li key={l.label}>
+                    <a href={l.href} className="text-white/35 hover:text-white/70 text-sm transition-colors">
+                      {l.label}
+                    </a>
+                  </li>
                 ))}
               </ul>
             </div>
@@ -663,11 +704,11 @@ function SiteFooter({ onSignIn, onOpen }) {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-white/25 text-xs text-center sm:text-left leading-relaxed">
               © {new Date().getFullYear()} Metropolitan Capital &amp; Trust Bank. All rights reserved.<br />
-              Member FDIC · Equal Housing Lender · NMLS# 123456
+              Member FDIC · Equal Housing Lender
             </p>
             <div className="flex gap-5">
-              {['Privacy','Terms','Security','Cookies'].map(l => (
-                <a key={l} href={`/${l.toLowerCase()}`} className="text-white/25 hover:text-white/50 text-xs transition-colors">{l}</a>
+              {[['Privacy','/privacy'],['Terms','/terms'],['Security','/security'],['Cookies','/cookies']].map(([l,h]) => (
+                <a key={l} href={h} className="text-white/25 hover:text-white/50 text-xs transition-colors">{l}</a>
               ))}
             </div>
           </div>

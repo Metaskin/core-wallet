@@ -25,7 +25,37 @@ const app = express();
 app.set('trust proxy', 1);
 
 // ─── Security & Parsing ───────────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:     ["'self'"],
+      scriptSrc:      ["'self'"],
+      styleSrc:       ["'self'", "'unsafe-inline'"],
+      imgSrc:         ["'self'", 'data:'],
+      connectSrc:     ["'self'"],
+      fontSrc:        ["'self'"],
+      objectSrc:      ["'none'"],
+      mediaSrc:       ["'none'"],
+      frameSrc:       ["'none'"],
+      frameAncestors: ["'none'"],
+      baseUri:        ["'self'"],
+      formAction:     ["'self'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  hsts: {
+    maxAge:            63072000,
+    includeSubDomains: true,
+    preload:           true,
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  permittedCrossDomainPolicies: false,
+  dnsPrefetchControl: { allow: false },
+  frameguard: { action: 'deny' },
+  noSniff: true,
+  xssFilter: true,
+}));
 
 // CLIENT_ORIGIN accepts a comma-separated list of allowed origins, e.g.:
 //   https://mctbank.online,https://www.mctbank.online,http://localhost,http://localhost:5173

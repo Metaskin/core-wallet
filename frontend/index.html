@@ -19,22 +19,34 @@
 
     <!-- SEO / share -->
     <meta name="description" content="Metropolitan Capital &amp; Trust Bank — Premium personal and commercial banking with checking, savings, cards, and wealth management." />
-    <meta name="keywords" content="banking, checking, savings, wire transfer, wealth management, FDIC insured" />
+    <meta name="keywords" content="banking, checking, savings, wire transfer, wealth management, FDIC insured, MCT Bank" />
     <meta name="author" content="Metropolitan Capital &amp; Trust Bank" />
-    <meta name="robots" content="noindex, nofollow" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://mctbank.online/" />
 
     <!-- Open Graph -->
     <meta property="og:type"        content="website" />
     <meta property="og:title"       content="Metropolitan Capital &amp; Trust Bank" />
-    <meta property="og:description" content="Premium personal and commercial banking" />
-    <meta property="og:image"       content="/icon-512.png" />
+    <meta property="og:description" content="Premium personal and commercial banking — checking, savings, cards, and wealth management. FDIC insured." />
+    <meta property="og:image"       content="https://mctbank.online/icon-512.png" />
+    <meta property="og:url"         content="https://mctbank.online/" />
+    <meta property="og:site_name"   content="Metropolitan Capital &amp; Trust Bank" />
+    <meta property="og:locale"      content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary" />
+    <meta name="twitter:title"       content="Metropolitan Capital &amp; Trust Bank" />
+    <meta name="twitter:description" content="Premium personal and commercial banking. FDIC insured." />
+    <meta name="twitter:image"       content="https://mctbank.online/icon-512.png" />
 
     <title>Metropolitan Capital &amp; Trust Bank</title>
 
     <!-- Web App Manifest -->
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- Apple touch icons (fallback until proper PNGs are generated) -->
+    <!-- Apple touch icons -->
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="apple-touch-icon" sizes="152x152" href="/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
@@ -49,22 +61,38 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-    <!-- Splash screens for iOS (uses theme color — full-screen PNGs can be added later) -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Organization structured data (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BankOrCreditUnion",
+      "name": "Metropolitan Capital & Trust Bank",
+      "alternateName": "MCT Bank",
+      "url": "https://mctbank.online",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://mctbank.online/icon-512.png"
+      },
+      "description": "Premium personal and commercial banking with checking, savings, cards, and wealth management. FDIC insured.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "US"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer service",
+        "availableLanguage": "English",
+        "url": "https://mctbank.online/contact"
+      },
+      "sameAs": [
+        "https://mctbank.online"
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-
-    <!-- Service Worker Registration -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js', { scope: '/' })
-            .then(() => {/* registered */})
-            .catch(() => {/* sw optional — app works without it */});
-        });
-      }
-    </script>
+    <script src="/register-sw.js"></script>
   </body>
 </html>

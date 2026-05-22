@@ -20,25 +20,19 @@ function clearToken() {
 const _apiBase = import.meta.env.VITE_API_URL || '/api';
 const _isCapacitor = typeof window !== 'undefined' && !!(window.Capacitor);
 
-if (_isCapacitor && !import.meta.env.VITE_API_URL) {
-  console.error(
-    '[API] Capacitor WebView detected but VITE_API_URL is not set.\n' +
-    'All calls resolve to http://localhost/api (Capacitor local server) and return HTML.\n' +
-    'Fix: set VITE_API_URL=https://core-wallet.onrender.com/api in frontend/.env.production\n' +
-    'then rebuild: npm run build && npx cap sync android'
-  );
+if (import.meta.env.DEV) {
+  if (_isCapacitor && !import.meta.env.VITE_API_URL) {
+    console.error(
+      '[API] Capacitor WebView detected but VITE_API_URL is not set.\n' +
+      'Fix: set VITE_API_URL=https://core-wallet.onrender.com/api in frontend/.env.production\n' +
+      'then rebuild: npm run build && npx cap sync android'
+    );
+  }
+  if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.endsWith('/api')) {
+    console.error(`[API] VITE_API_URL does not end with /api — requests will hit the wrong endpoint.`);
+  }
+  console.log(`[API] base="${_apiBase}" capacitor=${_isCapacitor} mode=${import.meta.env.MODE}`);
 }
-
-if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.endsWith('/api')) {
-  console.error(
-    `[API] VITE_API_URL="${import.meta.env.VITE_API_URL}" does not end with /api.\n` +
-    'All route paths (/auth/login, /accounts/me, etc.) are appended to this base,\n' +
-    'so every request will hit the wrong endpoint.\n' +
-    'Fix: set VITE_API_URL=https://core-wallet.onrender.com/api (add /api at the end).'
-  );
-}
-
-console.log(`[API] base="${_apiBase}" capacitor=${_isCapacitor} mode=${import.meta.env.MODE}`);
 
 const client = axios.create({
   baseURL: _apiBase,

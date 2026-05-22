@@ -10,22 +10,28 @@
   "android": {
     "allowMixedContent": false,
     "captureInput": true,
-    "webContentsDebuggingEnabled": false
+    "webContentsDebuggingEnabled": false,
+    "loggingBehavior": "none",
+    "minWebViewVersion": 80
   },
   "ios": {
     "scheme": "MCTBank",
-    "limitsNavigationsToAppBoundDomains": true
+    "limitsNavigationsToAppBoundDomains": true,
+    "scrollEnabled": true,
+    "allowsLinkPreview": false
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 2000,
+      "launchShowDuration": 1500,
       "launchAutoHide": true,
       "backgroundColor": "#003087",
       "androidSplashResourceName": "splash",
       "androidScaleType": "CENTER_CROP",
       "showSpinner": false,
       "iosSpinnerStyle": "small",
-      "spinnerColor": "#FFFFFF"
+      "spinnerColor": "#FFFFFF",
+      "fadeInDuration": 200,
+      "fadeOutDuration": 200
     },
     "StatusBar": {
       "style": "DARK",
