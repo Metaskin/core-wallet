@@ -1,7 +1,8 @@
 // Metropolitan Capital & Trust Bank — Service Worker
 // Strategy: cache-first for static assets, network-first for API/navigation
 
-const CACHE_NAME = 'mct-bank-v1';
+const SW_VERSION  = '1.1.0';
+const CACHE_NAME  = 'mct-bank-v2';
 const OFFLINE_URL = '/offline.html';
 
 // Static assets to pre-cache on install
@@ -79,6 +80,16 @@ self.addEventListener('fetch', (event) => {
       });
     })
   );
+});
+
+// ── Message handler — version queries and skip-waiting from debug panel ───────
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'GET_VERSION') {
+    event.ports[0]?.postMessage({ version: SW_VERSION, cacheName: CACHE_NAME });
+  }
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // ── Push notifications (stub — ready for backend integration) ─────────────────

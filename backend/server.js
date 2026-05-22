@@ -104,6 +104,40 @@ app.get('/health/email', async (req, res) => {
   }
 });
 
+// Full diagnostic health — used by the frontend debug panel.
+// Returns: DB connectivity, memory, uptime, env var presence (not values), Node version.
+app.get('/health/full', async (req, res) => {
+  const memRaw = process.memoryUsage();
+  const memory = { heapUsed: memRaw.heapUsed, heapTotal: memRaw.heapTotal, rss: memRaw.rss };
+
+  let database = { ok: false, latency: null, error: null };
+  try {
+    const t0 = Date.now();
+    await pool.query('SELECT 1');
+    database = { ok: true, latency: Date.now() - t0 };
+  } catch (err) {
+    database = { ok: false, error: err.message };
+  }
+
+  const ENV_KEYS = [
+    'NODE_ENV', 'JWT_SECRET', 'DATABASE_URL',
+    'EMAILJS_SERVICE_ID', 'EMAILJS_PUBLIC_KEY', 'EMAILJS_TEMPLATE_ID', 'ENABLE_EMAIL',
+    'CLIENT_ORIGIN', 'CARD_ENCRYPTION_KEY',
+  ];
+  const env = Object.fromEntries(ENV_KEYS.map(k => [k, !!process.env[k]]));
+
+  res.json({
+    status:   database.ok ? 'ok' : 'degraded',
+    version:  '2.0.0',
+    uptime:   process.uptime(),
+    memory,
+    database,
+    env,
+    env_name: process.env.NODE_ENV,
+    node:     process.version,
+  });
+});
+
 app.use('/api', require('./routes/index'));
 
 // ─── 404 ─────────────────────────────────────────────────────────────────────

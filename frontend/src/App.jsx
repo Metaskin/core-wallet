@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth }                         from './store/authStore';
 import { NotificationProvider }                          from './store/notificationStore';
 import TopNav            from './components/layout/TopNav';
@@ -30,6 +30,7 @@ import BillPay           from './pages/BillPay';
 import CreditScore       from './pages/CreditScore';
 import Cashback          from './pages/Cashback';
 import CardServices      from './pages/CardServices';
+import DebugPanel        from './pages/DebugPanel';
 
 // ── Desktop sidebar nav ───────────────────────────────────────────────────────
 const NAV = [
@@ -55,25 +56,45 @@ const ADMIN_NAV = [
   { to: '/admin/transactions', label: 'All Transfers',  icon: <IconTransfer /> },
 ];
 
+// ── Debug keyboard shortcut (Ctrl+Shift+D → /debug) ──────────────────────────
+function DebugShortcut() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const fn = (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        navigate('/debug');
+      }
+    };
+    window.addEventListener('keydown', fn);
+    return () => window.removeEventListener('keydown', fn);
+  }, [navigate]);
+  return null;
+}
+
 // ── Public shell ──────────────────────────────────────────────────────────────
 function PublicShell() {
   return (
-    <Routes>
-      <Route path="/"                element={<Landing />} />
-      <Route path="/login"           element={<Login />} />
-      <Route path="/register"        element={<Navigate to="/login?tab=register" replace />} />
-      <Route path="/about"           element={<About />} />
-      <Route path="/contact"         element={<Contact />} />
-      <Route path="/status"          element={<LegalPage slug="status" />} />
-      <Route path="/legal"           element={<LegalPage slug="legal" />} />
-      <Route path="/licenses"        element={<LegalPage slug="licenses" />} />
-      <Route path="/privacy"         element={<LegalPage slug="privacy" />} />
-      <Route path="/privacy-choices" element={<LegalPage slug="privacy-choices" />} />
-      <Route path="/terms"           element={<LegalPage slug="terms" />} />
-      <Route path="/security"        element={<LegalPage slug="security" />} />
-      <Route path="/cookies"         element={<LegalPage slug="cookies" />} />
-      <Route path="*"                element={<Navigate to="/login" replace />} />
-    </Routes>
+    <>
+      <DebugShortcut />
+      <Routes>
+        <Route path="/"                element={<Landing />} />
+        <Route path="/login"           element={<Login />} />
+        <Route path="/register"        element={<Navigate to="/login?tab=register" replace />} />
+        <Route path="/about"           element={<About />} />
+        <Route path="/contact"         element={<Contact />} />
+        <Route path="/debug"           element={<DebugPanel />} />
+        <Route path="/status"          element={<LegalPage slug="status" />} />
+        <Route path="/legal"           element={<LegalPage slug="legal" />} />
+        <Route path="/licenses"        element={<LegalPage slug="licenses" />} />
+        <Route path="/privacy"         element={<LegalPage slug="privacy" />} />
+        <Route path="/privacy-choices" element={<LegalPage slug="privacy-choices" />} />
+        <Route path="/terms"           element={<LegalPage slug="terms" />} />
+        <Route path="/security"        element={<LegalPage slug="security" />} />
+        <Route path="/cookies"         element={<LegalPage slug="cookies" />} />
+        <Route path="*"                element={<Navigate to="/login" replace />} />
+      </Routes>
+    </>
   );
 }
 
@@ -256,11 +277,14 @@ function AuthenticatedShell({ user }) {
         </nav>
       </aside>
 
+      <DebugShortcut />
+
       {/* ── Main content ───────────────────────────────────────────────────── */}
       {/* pt-14 clears mobile header (56px); md:pt-24 clears header+strip (96px) */}
       {/* md:ml-60 shifts right of desktop sidebar (240px)                       */}
       <main className="md:ml-60 pt-14 md:pt-24 pb-20 md:pb-0 min-h-screen">
         <Routes>
+          <Route path="/debug"             element={<DebugPanel />} />
           <Route path="/"                  element={<Dashboard />} />
           <Route path="/cards"             element={<Cards />} />
           <Route path="/transactions"      element={<Transactions />} />
@@ -330,7 +354,7 @@ function AppShell() {
   }
 
   const LEGAL = ['/status', '/legal', '/licenses', '/privacy', '/privacy-choices', '/terms', '/security', '/cookies'];
-  const PUBLIC = ['/', '/login', '/register', '/about', '/contact', ...LEGAL];
+  const PUBLIC = ['/', '/login', '/register', '/about', '/contact', '/debug', ...LEGAL];
 
   if (!user && !PUBLIC.includes(location.pathname)) return <Navigate to="/login" replace />;
   if (user && (location.pathname === '/login' || location.pathname === '/register')) return <Navigate to="/" replace />;
