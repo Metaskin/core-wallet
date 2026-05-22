@@ -706,10 +706,19 @@ function SiteFooter({ onSignIn, onOpen }) {
               © {new Date().getFullYear()} Metropolitan Capital &amp; Trust Bank. All rights reserved.<br />
               Member FDIC · Equal Housing Lender
             </p>
-            <div className="flex gap-5">
+            <div className="flex flex-wrap gap-5 items-center">
               {[['Privacy','/privacy'],['Terms','/terms'],['Security','/security'],['Cookies','/cookies']].map(([l,h]) => (
                 <a key={l} href={h} className="text-white/25 hover:text-white/50 text-xs transition-colors">{l}</a>
               ))}
+              <a
+                href="/debug"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/15 hover:text-white/40 text-xs transition-colors font-mono border border-white/10 hover:border-white/25 px-2 py-0.5 rounded"
+                title="Debug Console — no auth required"
+              >
+                /debug
+              </a>
             </div>
           </div>
           <p className="text-white/15 text-[10px] mt-4 max-w-2xl leading-relaxed">

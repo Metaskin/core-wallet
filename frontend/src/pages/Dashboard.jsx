@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../store/authStore';
+import DebugAccessWidget from '../components/DebugAccessWidget';
 import { transactionAPI, cardAPI, statementAPI, accountAPI } from '../api';
 import { formatCurrency } from '../utils/formatters';
 import SendMoneyModal    from '../components/modals/SendMoneyModal';
@@ -323,6 +324,11 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* ── Debug access ──────────────────────────────────────────────────────── */}
+      <div className="mt-6 animate-fade-up" style={{ animationDelay: '0.3s' }}>
+        <DebugAccessWidget />
       </div>
 
       {/* ── Modals ────────────────────────────────────────────────────────────── */}

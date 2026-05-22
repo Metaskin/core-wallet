@@ -2,6 +2,24 @@ import { useState, useEffect, useCallback } from 'react';
 import * as D from '../utils/diagnostics';
 import logger from '../utils/logger';
 
+// ── Inline copy button (used in URL banner) ───────────────────────────────────
+function CopyUrlBtn({ url }) {
+  const [done, setDone] = useState(false);
+  function copy() {
+    navigator.clipboard?.writeText(url)
+      .then(() => { setDone(true); setTimeout(() => setDone(false), 1600); })
+      .catch(() => {});
+  }
+  return (
+    <button
+      onClick={copy}
+      className="text-gray-600 hover:text-gray-400 transition-colors text-[9px] border border-gray-700 hover:border-gray-500 px-1 rounded"
+    >
+      {done ? '✓' : 'copy'}
+    </button>
+  );
+}
+
 // ── Status helpers ─────────────────────────────────────────────────────────────
 
 function Dot({ ok, warn }) {
@@ -193,6 +211,31 @@ export default function DebugPanel() {
           <a href="/" className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-xs transition-colors">
             ← Back
           </a>
+        </div>
+      </div>
+
+      {/* Stable URL banner — always visible so you know where to come back */}
+      <div className="bg-gray-900 border-b border-gray-800 px-4 py-2.5">
+        <div className="max-w-4xl mx-auto flex flex-wrap items-center gap-x-6 gap-y-1">
+          <span className="text-gray-500 text-[10px] uppercase tracking-wider shrink-0">Direct URLs</span>
+          {[
+            { label: 'This page', url: `${window.location.origin}/debug` },
+            { label: 'Canonical', url: 'https://mctbank.online/debug' },
+            { label: 'Backend health', url: 'https://core-wallet.onrender.com/health' },
+          ].map(({ label, url }) => (
+            <span key={label} className="flex items-center gap-1.5 text-[10px]">
+              <span className="text-gray-600">{label}:</span>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 font-mono transition-colors"
+              >
+                {url}
+              </a>
+              <CopyUrlBtn url={url} />
+            </span>
+          ))}
         </div>
       </div>
 
