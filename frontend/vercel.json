@@ -48,7 +48,7 @@
       ]
     },
     {
-      "source": "/downloads/(.*\\.apk)",
+      "source": "/downloads/(.*)",
       "headers": [
         {
           "key": "Content-Disposition",
