@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "build": 1,
+  "apk": "/downloads/MCTBank.apk",
+  "releaseDate": "2026-05-23",
+  "size": "~15 MB",
+  "minAndroid": 8,
+  "changelog": [
+    "Initial public release",
+    "Biometric authentication (Face ID / Fingerprint)",
+    "Full account management — checking & savings",
+    "Mobile check deposit",
+    "Instant push notifications",
+    "Card controls & travel notice"
+  ]
+}
