@@ -1,9 +1,9 @@
 {
   "version": "1.0.0",
   "build": 1,
-  "apk": "/downloads/MCTBank.apk",
+  "apk": "/downloads/MTCBank.apk",
   "releaseDate": "2026-05-23",
-  "size": "~15 MB",
+  "size": "4.5 MB",
   "minAndroid": 8,
   "changelog": [
     "Initial public release",

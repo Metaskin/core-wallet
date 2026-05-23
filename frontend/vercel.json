@@ -46,6 +46,27 @@
           "value": "same-origin"
         }
       ]
+    },
+    {
+      "source": "/downloads/(.*\\.apk)",
+      "headers": [
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"MCTBank.apk\""
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.android.package-archive"
+        },
+        {
+          "key": "Cross-Origin-Resource-Policy",
+          "value": "cross-origin"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
     }
   ]
 }

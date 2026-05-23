@@ -135,7 +135,7 @@ export default function InstallSection() {
   const [downloading, setDownloading] = useState(false);
   const [pwaInstalling, setPwaInstalling] = useState(false);
 
-  const apkUrl  = `${window.location.origin}/downloads/MCTBank.apk`;
+  const apkUrl  = `${window.location.origin}/downloads/MTCBank.apk`;
   const apkInfo = latestVersion;
 
   function handleAPKDownload() {
