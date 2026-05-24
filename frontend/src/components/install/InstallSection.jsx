@@ -181,7 +181,7 @@ export default function InstallSection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
 
           {/* ── Android / APK card ──────────────────────────────────────────── */}
-          <div className="relative border border-gray-200 rounded-2xl p-6 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+          <div className="relative border border-gray-200 rounded-2xl p-6 bg-white shadow-sm hover:shadow-md transition-shadow">
             {/* Subtle gradient accent */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#003087]/5 to-transparent rounded-2xl pointer-events-none" />
 
@@ -227,38 +227,40 @@ export default function InstallSection() {
               </div>
             ) : (
               /* Desktop or iOS — show QR code */
-              <div className="flex flex-col sm:flex-row gap-5 items-center">
-                <div className="shrink-0">
-                  <QRCodeDisplay url={apkUrl} size={140} />
-                  <p className="text-[10px] text-gray-400 text-center mt-2">Scan on Android</p>
-                </div>
-                <div className="flex-1 space-y-3 w-full">
-                  <p className="text-gray-500 text-sm">
-                    {platform === 'ios'
-                      ? 'The Android app is for Android devices. See web app option below.'
-                      : 'Scan the QR code with your Android phone camera to open the download page.'}
-                  </p>
-                  <div className="space-y-2">
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">Direct URL</p>
-                    <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
-                      <code className="flex-1 text-[11px] font-mono text-gray-500 truncate">{apkUrl}</code>
-                      <button
-                        onClick={() => navigator.clipboard?.writeText(apkUrl)}
-                        className="text-[10px] text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 px-1.5 py-0.5 rounded transition-colors shrink-0"
-                      >
-                        Copy
-                      </button>
+              <div className="space-y-4">
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  {platform === 'ios'
+                    ? 'The Android app requires an Android device. Use the web app option on the right.'
+                    : 'Scan the QR code with your Android phone camera to open the download page.'}
+                </p>
+                {platform !== 'ios' && (
+                  <div className="flex items-start gap-4">
+                    <div className="shrink-0 text-center">
+                      <QRCodeDisplay url={apkUrl} size={110} />
+                      <p className="text-[10px] text-gray-400 mt-1.5">Scan on Android</p>
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-3">
+                      <div>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Direct URL</p>
+                        <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
+                          <code className="flex-1 min-w-0 text-[10px] font-mono text-gray-500 truncate">mctbank.online/downloads/MTCBank.apk</code>
+                          <button
+                            onClick={() => navigator.clipboard?.writeText(apkUrl)}
+                            className="text-[9px] text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 px-1.5 py-0.5 rounded transition-colors shrink-0"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                      </div>
+                      <APKDownloadButton
+                        version={apkInfo}
+                        loading={versionLoading}
+                        downloading={downloading}
+                        onClick={handleAPKDownload}
+                      />
                     </div>
                   </div>
-                  {platform !== 'ios' && (
-                    <APKDownloadButton
-                      version={apkInfo}
-                      loading={versionLoading}
-                      downloading={downloading}
-                      onClick={handleAPKDownload}
-                    />
-                  )}
-                </div>
+                )}
               </div>
             )}
 

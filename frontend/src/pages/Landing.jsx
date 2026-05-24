@@ -623,42 +623,47 @@ function SiteFooter({ onSignIn, onOpen }) {
   const cols = [
     {
       title: 'Personal',
+      desc:  'Everyday banking for you',
       links: [
-        { label: 'Checking',      href: '/login?tab=register' },
-        { label: 'Savings',       href: '/login?tab=register' },
-        { label: 'Debit Cards',   href: '/login?tab=register' },
-        { label: 'Personal Loans',href: '/login?tab=register' },
-        { label: 'Mobile App',    href: '/#mobile' },
+        { label: 'Checking Account', href: '/#services',          sub: 'Free, no monthly fees' },
+        { label: 'Savings Account',  href: '/#services',          sub: 'High-yield earnings'   },
+        { label: 'Debit Cards',      href: '/#features',          sub: 'Virtual & physical'    },
+        { label: 'Personal Loans',   href: '/login?tab=register', sub: 'Competitive rates'     },
+        { label: 'Mobile App',       href: '/#mobile',            sub: 'iOS & Android'         },
       ],
     },
     {
       title: 'Business',
+      desc:  'Banking for growing companies',
       links: [
-        { label: 'Business Checking', href: '/login?tab=register' },
-        { label: 'Payroll',           href: '/login?tab=register' },
-        { label: 'Merchant Services', href: '/login?tab=register' },
-        { label: 'Business Credit',   href: '/login?tab=register' },
-        { label: 'Treasury',          href: '/login?tab=register' },
+        { label: 'Business Checking', href: '/#services',          sub: 'Built for business'   },
+        { label: 'Payroll Services',  href: '/#services',          sub: 'On-time, every time'  },
+        { label: 'Merchant Services', href: '/#services',          sub: 'Accept payments fast' },
+        { label: 'Business Credit',   href: '/login?tab=register', sub: 'Flexible credit lines' },
+        { label: 'Treasury',          href: '/#services',          sub: 'Cash management'      },
       ],
     },
     {
       title: 'Wealth',
+      desc:  'Grow and protect your assets',
       links: [
-        { label: 'Investment Advisory',   href: '/login?tab=register' },
-        { label: 'Portfolio Management',  href: '/login?tab=register' },
-        { label: 'Retirement Planning',   href: '/login?tab=register' },
-        { label: 'Tax Services',          href: '/login?tab=register' },
-        { label: 'Trust Services',        href: '/login?tab=register' },
+        { label: 'Investment Advisory',  href: '/#services',          sub: 'Personalised strategy'  },
+        { label: 'Portfolio Management', href: '/#services',          sub: 'Active monitoring'      },
+        { label: 'Retirement Planning',  href: '/#services',          sub: 'IRA & 401(k) guidance'  },
+        { label: 'Tax Services',         href: '/login?tab=register', sub: 'Minimise your tax bill' },
+        { label: 'Trust Services',       href: '/#services',          sub: 'Estate & trust setup'   },
       ],
     },
     {
       title: 'Company',
+      desc:  'Learn more about MCT Bank',
       links: [
-        { label: 'About Us',   href: '/about' },
-        { label: 'Contact Us', href: '/contact' },
-        { label: 'Security',   href: '/security' },
-        { label: 'Privacy',    href: '/privacy' },
-        { label: 'Terms',      href: '/terms' },
+        { label: 'About Us',   href: '/about',    sub: 'Our story since 2019'     },
+        { label: 'Contact Us', href: '/contact',  sub: '24 / 7 client support'   },
+        { label: 'Careers',    href: '/contact',  sub: 'Join our team'           },
+        { label: 'Security',   href: '/security', sub: 'How we protect you'      },
+        { label: 'Privacy',    href: '/privacy',  sub: 'Your data, your rights'  },
+        { label: 'Terms',      href: '/terms',    sub: 'Legal & disclosures'     },
       ],
     },
   ];
@@ -687,12 +692,14 @@ function SiteFooter({ onSignIn, onOpen }) {
           </div>
           {cols.map(col => (
             <div key={col.title}>
-              <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-4">{col.title}</p>
-              <ul className="space-y-2.5">
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">{col.title}</p>
+              {col.desc && <p className="text-white/25 text-[10px] mb-4 leading-snug">{col.desc}</p>}
+              <ul className="space-y-3">
                 {col.links.map(l => (
                   <li key={l.label}>
-                    <a href={l.href} className="text-white/35 hover:text-white/70 text-sm transition-colors">
-                      {l.label}
+                    <a href={l.href} className="group block">
+                      <span className="text-white/40 hover:text-white/75 text-sm transition-colors group-hover:text-white/75">{l.label}</span>
+                      {l.sub && <span className="block text-white/20 text-[10px] leading-snug mt-0.5 group-hover:text-white/35 transition-colors">{l.sub}</span>}
                     </a>
                   </li>
                 ))}
@@ -704,7 +711,7 @@ function SiteFooter({ onSignIn, onOpen }) {
         <div className="border-t border-white/[0.07] pt-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-white/25 text-xs text-center sm:text-left leading-relaxed">
-              © {new Date().getFullYear()} Metropolitan Capital &amp; Trust Bank. All rights reserved.<br />
+              © 2019 Metropolitan Capital &amp; Trust Bank. All rights reserved.<br />
               Member FDIC · Equal Housing Lender
             </p>
             <div className="flex flex-wrap gap-5 items-center">
