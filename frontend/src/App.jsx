@@ -31,6 +31,7 @@ import CreditScore       from './pages/CreditScore';
 import Cashback          from './pages/Cashback';
 import CardServices      from './pages/CardServices';
 import BankTransfer      from './pages/BankTransfer';
+import Services          from './pages/Services';
 import DebugPanel        from './pages/DebugPanel';
 
 // ── Desktop sidebar nav ───────────────────────────────────────────────────────
@@ -86,6 +87,7 @@ function PublicShell() {
         <Route path="/about"           element={<About />} />
         <Route path="/contact"         element={<Contact />} />
         <Route path="/debug"           element={<DebugPanel />} />
+        <Route path="/services"        element={<Services />} />
         <Route path="/status"          element={<LegalPage slug="status" />} />
         <Route path="/legal"           element={<LegalPage slug="legal" />} />
         <Route path="/licenses"        element={<LegalPage slug="licenses" />} />
@@ -308,6 +310,7 @@ function AuthenticatedShell({ user }) {
           <Route path="/cashback"          element={<Cashback />} />
           <Route path="/card-services"     element={<CardServices />} />
           {/* Public info pages */}
+          <Route path="/services"          element={<Services />} />
           <Route path="/about"             element={<About />} />
           <Route path="/contact"           element={<Contact />} />
           {/* Legal */}
@@ -357,7 +360,7 @@ function AppShell() {
   }
 
   const LEGAL = ['/status', '/legal', '/licenses', '/privacy', '/privacy-choices', '/terms', '/security', '/cookies'];
-  const PUBLIC = ['/', '/login', '/register', '/about', '/contact', '/debug', ...LEGAL];
+  const PUBLIC = ['/', '/login', '/register', '/about', '/contact', '/debug', '/services', ...LEGAL];
 
   if (!user && !PUBLIC.includes(location.pathname)) return <Navigate to="/login" replace />;
   if (user && (location.pathname === '/login' || location.pathname === '/register')) return <Navigate to="/" replace />;
