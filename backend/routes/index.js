@@ -19,5 +19,6 @@ router.use('/bill-pay',       require('./billPay'));
 router.use('/credit-score',   require('./creditScore'));
 router.use('/cashback',       require('./cashback'));
 router.use('/settings',       require('./settings'));
+router.use('/plaid',          require('./plaid'));
 
 module.exports = router;

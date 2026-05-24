@@ -30,6 +30,7 @@ import BillPay           from './pages/BillPay';
 import CreditScore       from './pages/CreditScore';
 import Cashback          from './pages/Cashback';
 import CardServices      from './pages/CardServices';
+import BankTransfer      from './pages/BankTransfer';
 import DebugPanel        from './pages/DebugPanel';
 
 // ── Desktop sidebar nav ───────────────────────────────────────────────────────
@@ -48,8 +49,9 @@ const BANKING_NAV = [
   { to: '/bill-pay',      label: 'Bill Pay',      icon: <IconBillPay /> },
   { to: '/cashback',      label: 'Cashback',      icon: <IconCashback /> },
   { to: '/credit-score',  label: 'Credit Score',  icon: <IconCreditScore /> },
-  { to: '/wire-transfer', label: 'Wire Transfer', icon: <IconWireTransfer /> },
-  { to: '/card-services', label: 'Card Services', icon: <IconCardServices /> },
+  { to: '/wire-transfer',  label: 'Wire Transfer',  icon: <IconWireTransfer /> },
+  { to: '/bank-transfer',  label: 'Bank Transfer',  icon: <IconBankTransfer /> },
+  { to: '/card-services',  label: 'Card Services',  icon: <IconCardServices /> },
 ];
 const ADMIN_NAV = [
   { to: '/admin/users',        label: 'Users',         icon: <IconUsers /> },
@@ -300,6 +302,7 @@ function AuthenticatedShell({ user }) {
           <Route path="/travel-notice"     element={<TravelNotice />} />
           <Route path="/check-deposit"     element={<CheckDeposit />} />
           <Route path="/wire-transfer"     element={<WireTransfer />} />
+          <Route path="/bank-transfer"     element={<BankTransfer />} />
           <Route path="/bill-pay"          element={<BillPay />} />
           <Route path="/credit-score"      element={<CreditScore />} />
           <Route path="/cashback"          element={<Cashback />} />
@@ -403,4 +406,5 @@ function IconBillPay()      { return <svg width="16" height="16" viewBox="0 0 24
 function IconCashback()     { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>; }
 function IconCreditScore()  { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 8v4l3 3"/></svg>; }
 function IconWireTransfer() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>; }
-function IconCardServices() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><circle cx="18" cy="16" r="2"/><path d="M20.5 14.5l1-1"/></svg>; }
+function IconCardServices()  { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><circle cx="18" cy="16" r="2"/><path d="M20.5 14.5l1-1"/></svg>; }
+function IconBankTransfer()  { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>; }

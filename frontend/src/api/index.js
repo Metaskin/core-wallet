@@ -160,6 +160,19 @@ export const cardReplacementAPI = {
   getStatus:          (cardId)       => client.get(`/cards/${cardId}/replacement`),
 };
 
+// ─── Plaid / Bank Transfers ───────────────────────────────────────────────────
+export const plaidAPI = {
+  searchInstitutions: (q)     => client.get(`/plaid/search?q=${encodeURIComponent(q || '')}`),
+  createLinkToken:    ()      => client.post('/plaid/link-token'),
+  exchangeToken:      (data)  => client.post('/plaid/exchange-token', data),
+  getAccounts:        ()      => client.get('/plaid/accounts'),
+  addManualAccount:   (data)  => client.post('/plaid/manual-account', data),
+  unlinkAccount:      (id)    => client.delete(`/plaid/accounts/${id}`),
+  createTransfer:     (data)  => client.post('/plaid/transfers', data),
+  getTransfers:       ()      => client.get('/plaid/transfers'),
+  getOneTransfer:     (id)    => client.get(`/plaid/transfers/${id}`),
+};
+
 // ─── Settings ─────────────────────────────────────────────────────────────────
 export const settingsAPI = {
   getProfile:             ()     => client.get('/settings/profile'),
